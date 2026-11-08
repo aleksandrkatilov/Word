@@ -14,7 +14,7 @@ public static class HangProbe
 {
     public static async Task Run(string variant, string samples, Action<string> log)
     {
-        bool ribbon = variant.Contains("ribbon"), theme = variant.Contains("theme"), direct = variant.Contains("direct");
+        bool ribbon = variant.Contains("ribbon"), theme = variant.Contains("theme"), direct = variant.Contains("direct"), spell = variant.Contains("spell");
         var done = new ManualResetEventSlim();
         new Thread(() =>
         {
@@ -39,6 +39,13 @@ public static class HangProbe
         grid.Children.Add(editor);
         var win = new Syncfusion.Windows.Tools.Controls.RibbonWindow { Width = 1280, Height = 800, Content = grid, Title = variant };
         if (theme) Syncfusion.SfSkinManager.SfSkinManager.SetTheme(win, new Syncfusion.SfSkinManager.Theme("Windows11Light"));
+        if (spell)
+        {
+            editor.SpellChecker ??= new SpellChecker();
+            editor.SpellChecker.UseFrameworkSpellCheck = true;
+            editor.Language = System.Windows.Markup.XmlLanguage.GetLanguage("ru-RU");
+            editor.SpellChecker.IsEnabled = true;
+        }
         win.Show();
         editor.Load(Path.Combine(samples, "01-styles-lists-multipage.docx"));
         for (int i = 0; i < 20; i++) { await Lab.Idle(); await Task.Delay(100); }

@@ -92,7 +92,7 @@ jobs:
         env:
           PERO_SYNCFUSION_KEY: ${{ secrets.SYNCFUSION_LICENSE_KEY }}
         run: |
-          foreach ($v in @("plain","ribbon","theme","ribbon-theme","ribbon-theme-direct")) {
+          foreach ($v in @("plain","spell","ribbon","theme","ribbon-theme","ribbon-theme-spell","ribbon-theme-spell-direct")) {
             dotnet run --project tools/Pero.Lab -c Release --no-build -- hang samples/docx $v ci-out
           }
 
