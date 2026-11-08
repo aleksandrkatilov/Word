@@ -56,6 +56,13 @@ public static class HangProbe
             foreach (SectionAdv s in editor.Document.Sections)
                 s.SectionFormat.PageSize = new Size(s.SectionFormat.PageSize.Height, s.SectionFormat.PageSize.Width);
         }
+        else if (variant.Contains("toggle"))
+        {
+            editor.SpellChecker!.IsEnabled = false;
+            Pero.Services.PageSetup.SetOrientation(editor, landscape: true);
+            for (int i = 0; i < 10; i++) { await Lab.Idle(); await Task.Delay(100); }
+            editor.SpellChecker.IsEnabled = true;
+        }
         else
         {
             Pero.Services.PageSetup.SetOrientation(editor, landscape: true);

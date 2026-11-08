@@ -292,10 +292,16 @@ public partial class EditorWindow
     private void Layout(Action change)
     {
         if (Editor.IsReadOnly) { Log.Info("LAYOUT skipped: read-only"); return; }
-        Dispatcher.BeginInvoke(new Action(() =>
+        Dispatcher.BeginInvoke(new Action(async () =>
         {
+            // Проверка орфографии Windows зависает, если разметка страниц меняется во время проверки
+            // (найдено замером в CI, вариант «spell»). Отключаем её на время изменения макета.
+            bool spell = Editor.SpellChecker?.IsEnabled == true;
+            if (spell) Editor.SpellChecker!.IsEnabled = false;
             try { change(); }
             catch (Exception ex) { Log.Error("layout", ex); MessageBox.Show(this, ex.Message, Strings.AppName); }
+            await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
+            if (spell) Editor.SpellChecker!.IsEnabled = true;
             Editor.Focus();
         }), System.Windows.Threading.DispatcherPriority.Background);
     }
