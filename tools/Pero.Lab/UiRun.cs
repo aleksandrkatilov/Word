@@ -188,6 +188,7 @@ public sealed class UiRun(string exe, string samples, string outDir, Action<stri
             Press(dlg!, "2"); // Отмена
         });
 
+        log($"PERF cold start to main window (first launch): {_coldStart} ms");
         log($"UI: {_results.Count(r => r.Ok)} из {_results.Count} сценариев пройдено");
         File.WriteAllLines(Path.Combine(outDir, "ui-results.md"),
             new[] { "| Сценарий | Итог | Примечание |", "|---|---|---|" }
@@ -215,12 +216,28 @@ public sealed class UiRun(string exe, string samples, string outDir, Action<stri
         if (file is not null) psi.ArgumentList.Add(file);
         var app = Application.Launch(psi);
         var killer = new DialogKiller(app.ProcessId, log);
-        Window window = waitMain ? app.GetMainWindow(_auto, TimeSpan.FromSeconds(60)) : null!;
-        window?.Move(0, 0);
+        Window window = waitMain ? MainWindowOf(app) : null!;
+        if (window is not null) try { window.Move(0, 0); } catch { }
         var session = new Session(app, window!, killer);
         _sessions.Add(session);
         return session;
     }
+
+    /// <summary>Главное окно «Пера» (заголовок с «Перо»), а не всплывающее окно лицензии движка.</summary>
+    private Window MainWindowOf(Application app)
+    {
+        var sw = Stopwatch.StartNew();
+        while (sw.Elapsed < TimeSpan.FromSeconds(60))
+        {
+            var w = _auto.GetDesktop().FindAllChildren(cf => cf.ByProcessId(app.ProcessId))
+                .FirstOrDefault(e => (e.Name ?? "").EndsWith("Перо", StringComparison.Ordinal) && e.ControlType == FlaUI.Core.Definitions.ControlType.Window);
+            if (w is not null) { _coldStart ??= sw.ElapsedMilliseconds; return w.AsWindow(); }
+            Thread.Sleep(200);
+        }
+        throw new TimeoutException("главное окно «Перо» не появилось");
+    }
+
+    private long? _coldStart;
 
     private string Copy(string sample)
     {

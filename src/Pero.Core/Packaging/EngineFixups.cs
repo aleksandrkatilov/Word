@@ -11,18 +11,21 @@ namespace Pero.Core.Packaging;
 ///    но выбрасывает «продолжающие» ячейки в следующих строках. Строки становятся короче сетки
 ///    таблицы, и в Word таблица распадается. Исправление вставляет ячейки vMerge="continue"
 ///    на место недостающих колонок.
+/// 2. Гиперссылки: движок пишет ссылку полем HYPERLINK и снимает со ссылки знаковый стиль
+///    «Hyperlink». Если стиль есть в styles.xml, он возвращается на текст результата поля.
 /// </summary>
 public static class EngineFixups
 {
     private static readonly XNamespace W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
 
-    public sealed record Report(int MergeCellsRestored);
+    public sealed record Report(int MergeCellsRestored, int HyperlinkStylesRestored = 0);
 
     /// <summary>Скопировать пакет, исправив разметку частей с текстом.</summary>
     public static Report Apply(Stream input, Stream output)
     {
-        int restored = 0;
+        int restored = 0, links = 0;
         using var src = new ZipArchive(input, ZipArchiveMode.Read, leaveOpen: true);
+        bool hasHyperlinkStyle = StyleExists(src, "Hyperlink");
         using var dst = new ZipArchive(output, ZipArchiveMode.Create, leaveOpen: true);
         var budget = new DecompressionBudget(PackageLimits.Default.MaxTotalUncompressedBytes);
         foreach (var e in src.Entries)
@@ -38,11 +41,49 @@ public static class EngineFixups
 
             XDocument doc;
             using (var r = SafeXml.Create(from)) doc = XDocument.Load(r, LoadOptions.PreserveWhitespace);
-            int n = RestoreVerticalMerges(doc);
-            restored += n;
+            restored += RestoreVerticalMerges(doc);
+            if (hasHyperlinkStyle) links += RestoreHyperlinkStyle(doc);
             doc.Save(to, SaveOptions.DisableFormatting);
         }
-        return new Report(restored);
+        return new Report(restored, links);
+    }
+
+    private static bool StyleExists(ZipArchive zip, string styleId)
+    {
+        var e = zip.GetEntry("word/styles.xml");
+        if (e is null) return false;
+        using var s = new BoundedReadStream(e.Open(), new DecompressionBudget(64L * 1024 * 1024));
+        using var r = SafeXml.Create(s);
+        var doc = XDocument.Load(r);
+        return doc.Descendants(W + "style").Any(st => (string?)st.Attribute(W + "styleId") == styleId);
+    }
+
+    /// <summary>Вернуть стиль «Hyperlink» прогонам результата полей HYPERLINK, у которых нет своего стиля.</summary>
+    public static int RestoreHyperlinkStyle(XDocument doc)
+    {
+        int changed = 0;
+        foreach (var p in doc.Descendants(W + "p"))
+        {
+            var runs = p.Elements(W + "r").ToList();
+            int depth = 0; bool inLink = false, inResult = false;
+            foreach (var r in runs)
+            {
+                var fc = r.Element(W + "fldChar");
+                string? type = (string?)fc?.Attribute(W + "fldCharType");
+                if (type == "begin") { depth++; if (depth == 1) { inLink = false; inResult = false; } continue; }
+                if (type == "separate") { if (depth == 1) inResult = true; continue; }
+                if (type == "end") { if (depth == 1) { inLink = false; inResult = false; } depth = Math.Max(0, depth - 1); continue; }
+                var instr = r.Element(W + "instrText");
+                if (instr is not null && depth == 1 && instr.Value.TrimStart().StartsWith("HYPERLINK", StringComparison.OrdinalIgnoreCase)) inLink = true;
+                if (!(inLink && inResult) || r.Element(W + "t") is null) continue;
+                var rPr = r.Element(W + "rPr");
+                if (rPr is null) { rPr = new XElement(W + "rPr"); r.AddFirst(rPr); }
+                if (rPr.Element(W + "rStyle") is not null) continue;
+                rPr.AddFirst(new XElement(W + "rStyle", new XAttribute(W + "val", "Hyperlink")));
+                changed++;
+            }
+        }
+        return changed;
     }
 
     /// <summary>Вставить недостающие ячейки vMerge="continue". Возвращает число вставленных ячеек.</summary>

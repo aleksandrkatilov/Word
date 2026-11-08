@@ -55,11 +55,25 @@ Test("Макросы распознаются по части vbaProject", () =>
     Assert(r.Status == InspectionStatus.ReadOnlyRecommended, $"статус {r.Status}");
 });
 
-Test("Плавающий объект — предупреждение, а не блокировка", () =>
+Test("Плавающий объект открывается для правки (подтверждено замером), закладка — только чтение", () =>
 {
     var d = new MiniDocx { Body = "<w:p><w:r><w:drawing><wp:anchor/></w:drawing></w:r></w:p>" };
     var r = inspector.Inspect(d.Save(work, "anchor.docx"));
-    Assert(r.Status == InspectionStatus.OkWithWarnings, $"статус {r.Status}");
+    Assert(r.Status == InspectionStatus.Ok, $"плавающий объект: статус {r.Status}");
+    var b = new MiniDocx { Body = "<w:p><w:bookmarkStart w:id=\"1\" w:name=\"glava1\"/><w:r><w:t>x</w:t></w:r><w:bookmarkEnd w:id=\"1\"/></w:p>" };
+    var rb = inspector.Inspect(b.Save(work, "bookmark.docx"));
+    Assert(rb.Status == InspectionStatus.ReadOnlyRecommended, $"закладка: статус {rb.Status}");
+    var g = new MiniDocx { Body = "<w:p><w:bookmarkStart w:id=\"0\" w:name=\"_GoBack\"/><w:bookmarkEnd w:id=\"0\"/></w:p>" };
+    Assert(inspector.Inspect(g.Save(work, "goback.docx")).Status == InspectionStatus.Ok, "служебная закладка _GoBack не должна блокировать");
+});
+
+Test("Стиль Hyperlink возвращается на результат поля HYPERLINK", () =>
+{
+    var doc = System.Xml.Linq.XDocument.Parse("<w:document xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><w:body><w:p>" +
+        "<w:r><w:fldChar w:fldCharType=\"begin\"/></w:r><w:r><w:instrText>HYPERLINK \"https://e.com\"</w:instrText></w:r>" +
+        "<w:r><w:fldChar w:fldCharType=\"separate\"/></w:r><w:r><w:t>e.com</w:t></w:r><w:r><w:fldChar w:fldCharType=\"end\"/></w:r>" +
+        "<w:r><w:t>после</w:t></w:r></w:p></w:body></w:document>");
+    Assert(EngineFixups.RestoreHyperlinkStyle(doc) == 1, "стиль не восстановлен или задет текст вне ссылки");
 });
 
 Test("Поля PAGE/NUMPAGES в простой и сложной разметке", () =>

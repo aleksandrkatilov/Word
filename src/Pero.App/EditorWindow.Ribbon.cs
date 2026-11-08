@@ -265,9 +265,13 @@ public partial class EditorWindow
         para.Items.Add(RButton(Strings.PageBreak, () => Layout(() => Editor.Selection.InsertBreak(BreakType.PageBreak))));
         tab.Items.Add(para);
 
+        // Лента отображает только добавление в конец, поэтому «Макет» добавляется последним,
+        // а вкладки после «Вставки» переносятся за него.
         var insert = FindTab("PART_InsertTab");
         int index = insert is null ? 1 : _ribbon!.Items.IndexOf(insert) + 1;
-        _ribbon!.Items.Insert(index, tab);
+        var tail = _ribbon!.Items.Cast<object>().Skip(index).ToList();
+        _ribbon.Items.Add(tab);
+        foreach (var t in tail) { _ribbon.Items.Remove(t); _ribbon.Items.Add(t); }
     }
 
     private void Layout(Action change)
