@@ -52,11 +52,13 @@ public sealed class Document
         }
     }
 
+    /// <summary>Новый документ: пустой пакет со стилями «Обычный», «Название», «Заголовок 1–3» и списками.</summary>
     public static Document CreateBlank()
     {
-        var d = new Document();
-        d.Body.Add(new Paragraph());
-        return d;
+        using var ms = new MemoryStream();
+        Docx.PackageStore.Blank().WriteTo(ms);
+        ms.Position = 0;
+        return Docx.DocxReader.Read(ms);
     }
 }
 

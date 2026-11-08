@@ -10,11 +10,12 @@ public sealed record EffectivePara(string? StyleId, Align Align, int SpaceBefore
 
 public static class Resolve
 {
-    public static EffectivePara Para(Document doc, Paragraph p)
+    public static EffectivePara Para(Document doc, Paragraph p, string? tableStyle = null)
     {
         var s = doc.Styles;
         var acc = new ParaProps();
         Merge(acc, s.DefaultPara);
+        if (tableStyle is not null) foreach (var st in s.Chain(tableStyle)) Merge(acc, st.Para);
         string? styleId = p.Props.StyleId ?? s.DefaultParagraphStyleId;
         foreach (var st in s.Chain(styleId)) Merge(acc, st.Para);
         // отступы нумерации: после стиля, до прямого оформления
@@ -31,11 +32,12 @@ public static class Resolve
             numId is 0 ? null : numId, ilvl, acc.PageBreakBefore, acc.KeepNext);
     }
 
-    public static EffectiveRun Run(Document doc, Paragraph p, RunProps direct)
+    public static EffectiveRun Run(Document doc, Paragraph p, RunProps direct, string? tableStyle = null)
     {
         var s = doc.Styles;
         var acc = new RunProps();
         MergeRun(acc, s.DefaultRun);
+        if (tableStyle is not null) foreach (var st in s.Chain(tableStyle)) MergeRun(acc, st.Run);
         foreach (var st in s.Chain(p.Props.StyleId ?? s.DefaultParagraphStyleId)) MergeRun(acc, st.Run);
         if (direct.StyleId is not null) foreach (var st in s.Chain(direct.StyleId)) MergeRun(acc, st.Run);
         MergeRun(acc, direct);

@@ -35,6 +35,8 @@ internal static class StylesReader
                 },
                 BasedOn = (string?)s.Element(W + "basedOn")?.Attribute(W + "val"),
                 Next = (string?)s.Element(W + "next")?.Attribute(W + "val"),
+                RawTblPr = s.Element(W + "tblPr") is { } tp ? new System.Xml.Linq.XElement(tp) : null,
+                RawTcPr = s.Element(W + "tcPr") is { } cp ? new System.Xml.Linq.XElement(cp) : null,
                 IsDefault = (string?)s.Attribute(W + "default") is "1" or "true" or "on",
                 Run = DocxReader.ReadRunProps(s.Element(W + "rPr")),
                 Para = DocxReader.ReadParaProps(s.Element(W + "pPr")),

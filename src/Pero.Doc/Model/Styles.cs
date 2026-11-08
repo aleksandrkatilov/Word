@@ -15,6 +15,9 @@ public sealed class Style
     public bool IsDefault { get; init; }
     public RunProps Run { get; init; } = new();
     public ParaProps Para { get; init; } = new();
+    /// <summary>Свойства таблицы стиля (границы, поля ячеек) — для отображения.</summary>
+    public System.Xml.Linq.XElement? RawTblPr { get; init; }
+    public System.Xml.Linq.XElement? RawTcPr { get; init; }
 }
 
 /// <summary>Стили документа (только чтение для разметки; styles.xml переносится как есть, новые стили дописываются).</summary>

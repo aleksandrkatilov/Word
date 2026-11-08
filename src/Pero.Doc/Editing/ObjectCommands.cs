@@ -204,7 +204,7 @@ public sealed partial class DocEditor
             if (loc.Paragraph.Length > 0 && at.Offset < loc.Paragraph.Length) { SplitCore(at); loc = Index[at.Para]; }
             else if (loc.Paragraph.Length == 0) insertAt = loc.Index; // пустой абзац заменяется таблицей…
             int width = Doc.Section.PageWidth - Doc.Section.MarginLeft - Doc.Section.MarginRight;
-            var t = new Table();
+            var t = new Table { RawTblPr = DocxWriter.DefaultTblPr() };
             for (int c = 0; c < cols; c++) t.Grid.Add(width / cols);
             for (int r = 0; r < rows; r++)
             {
@@ -230,7 +230,8 @@ public sealed partial class DocEditor
             {
                 var t = styles.First(s => (string?)s.Attribute(W + "styleId") == id);
                 Doc.Styles.Added.Add(t);
-                Doc.Styles.ById[id] = new Style { Id = id, Name = id, Type = StyleType.Table };
+                Doc.Styles.ById[id] = new Style { Id = id, Name = id, Type = StyleType.Table, BasedOn = (string?)t.Element(W + "basedOn")?.Attribute(W + "val"),
+                    RawTblPr = t.Element(W + "tblPr") is { } tp ? new XElement(tp) : null };
             }
     }
 

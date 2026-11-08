@@ -320,12 +320,15 @@ public static class DocxWriter
         "tcFitText", "vAlign", "hideMark", "headers", "cellIns", "cellDel", "cellMerge", "tcPrChange",
     ];
 
+    /// <summary>Свойства новой таблицы: стиль «Сетка таблицы», автоматическая ширина.</summary>
+    internal static XElement DefaultTblPr() =>
+        new(W + "tblPr", new XElement(W + "tblStyle", new XAttribute(W + "val", "TableGrid")), new XElement(W + "tblW", new XAttribute(W + "w", 0), new XAttribute(W + "type", "auto")),
+            new XElement(W + "tblLook", new XAttribute(W + "val", "04A0")));
+
     private static XElement WriteTable(Table t, Ctx ctx)
     {
         var el = new XElement(W + "tbl");
-        el.Add(t.RawTblPr is not null ? new XElement(t.RawTblPr)
-            : new XElement(W + "tblPr", Val("tblStyle", "TableGrid"), new XElement(W + "tblW", new XAttribute(W + "w", 0), new XAttribute(W + "type", "auto")),
-                new XElement(W + "tblLook", new XAttribute(W + "val", "04A0"))));
+        el.Add(t.RawTblPr is not null ? new XElement(t.RawTblPr) : DefaultTblPr());
         el.Add(new XElement(W + "tblGrid", t.Grid.Select(w => new XElement(W + "gridCol", new XAttribute(W + "w", w)))));
         int col;
         foreach (var row in t.Rows)
