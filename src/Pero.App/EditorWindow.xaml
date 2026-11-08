@@ -87,8 +87,8 @@
                     <Button x:Name="ZoomOutButton" Content="−" Width="24" Background="Transparent" BorderThickness="0"
                             Click="ZoomOut_Click"/>
                     <Slider x:Name="ZoomSlider" Width="120" Minimum="25" Maximum="500" VerticalAlignment="Center"
-                            IsSnapToTickEnabled="False" SmallChange="10" LargeChange="10"
-                            Value="{Binding ZoomFactor, ElementName=Editor, Mode=TwoWay}"/>
+                            IsSnapToTickEnabled="False" SmallChange="10" LargeChange="10" Value="100"
+                            ValueChanged="ZoomSlider_ValueChanged"/>
                     <Button x:Name="ZoomInButton" Content="+" Width="24" Background="Transparent" BorderThickness="0"
                             Click="ZoomIn_Click"/>
                     <TextBlock Width="44" TextAlignment="Right" VerticalAlignment="Center"

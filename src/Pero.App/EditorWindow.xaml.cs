@@ -68,6 +68,7 @@ public partial class EditorWindow : RibbonWindow
         _suppressDirty = true;
 
         Editor.ContentChanged += (_, _) => OnContentChanged();
+        Editor.ZoomFactorChanged += (_, _) => SyncZoomFromEditor();
 
         // Перехват файловых команд ленты и движка (тоннельное событие доходит до окна раньше редактора).
         CommandManager.AddPreviewExecutedHandler(this, OnPreviewExecuted);
@@ -609,6 +610,26 @@ public partial class EditorWindow : RibbonWindow
         int? words = WordCounter.Count(Editor.Document);
         RefreshHeadings();
         WordStatus.Text = string.Format(Strings.StatusWords, words?.ToString("N0") ?? "—");
+    }
+
+    /// <summary>
+    /// Масштаб без двусторонней привязки: при смене размера страницы движок пересчитывает ZoomFactor,
+    /// и двусторонняя привязка ползунка зацикливала разметку. Значение передаётся только при заметном различии.
+    /// </summary>
+    private bool _syncingZoom;
+
+    private void ZoomSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (_syncingZoom || Editor is null) return;
+        if (Math.Abs(Editor.ZoomFactor - e.NewValue) > 0.5) Editor.ZoomFactor = Math.Round(e.NewValue);
+    }
+
+    private void SyncZoomFromEditor()
+    {
+        if (Math.Abs(ZoomSlider.Value - Editor.ZoomFactor) <= 0.5) return;
+        _syncingZoom = true;
+        try { ZoomSlider.Value = Math.Clamp(Editor.ZoomFactor, ZoomSlider.Minimum, ZoomSlider.Maximum); }
+        finally { _syncingZoom = false; }
     }
 
     private void ZoomIn_Click(object sender, RoutedEventArgs e) => ZoomSlider.Value = Math.Min(500, Math.Round(ZoomSlider.Value / 10) * 10 + 10);

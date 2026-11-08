@@ -288,12 +288,16 @@ public partial class EditorWindow
         foreach (var t in tail) { _ribbon.Items.Remove(t); _ribbon.Items.Add(t); }
     }
 
+    /// <summary>Изменения макета выполняются после завершения команды ленты, чтобы не вмешиваться в её обработку.</summary>
     private void Layout(Action change)
     {
         if (Editor.IsReadOnly) { Log.Info("LAYOUT skipped: read-only"); return; }
-        try { change(); }
-        catch (Exception ex) { Log.Error("layout", ex); MessageBox.Show(this, ex.Message, Strings.AppName); }
-        Editor.Focus();
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            try { change(); }
+            catch (Exception ex) { Log.Error("layout", ex); MessageBox.Show(this, ex.Message, Strings.AppName); }
+            Editor.Focus();
+        }), System.Windows.Threading.DispatcherPriority.Background);
     }
 
     private void ShowPageSetupDialog()
