@@ -82,7 +82,8 @@ public partial class EditorWindow : RibbonWindow
         Closing += OnClosing;
         Closed += OnClosed;
         Deactivated += (_, _) => _ = AutoRecoverAsync();
-        Loaded += (_, _) => { AddStage0RibbonTab(); Editor.Focus(); };
+        // вкладку добавляем после применения шаблонов ленты
+        Loaded += (_, _) => { Editor.Focus(); _ = Dispatcher.InvokeAsync(AddStage0RibbonTab, DispatcherPriority.Loaded); };
 
         _statusTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(400), DispatcherPriority.Background, (_, _) => UpdatePageStatus(), Dispatcher);
         _wordTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(1500), DispatcherPriority.ApplicationIdle, (_, _) => UpdateWordCount(), Dispatcher) { IsEnabled = false };
@@ -639,7 +640,7 @@ public partial class EditorWindow : RibbonWindow
     {
         var box = new TextBox
         {
-            Text = text, IsReadOnly = true, TextWrapping = TextWrapping.Wrap, BorderThickness = new Thickness(0),
+            Text = text, IsReadOnly = true, TextWrapping = System.Windows.TextWrapping.Wrap, BorderThickness = new Thickness(0),
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto, FontFamily = new System.Windows.Media.FontFamily("Segoe UI"),
             FontSize = 13, Padding = new Thickness(12),
         };
@@ -663,6 +664,9 @@ public partial class EditorWindow : RibbonWindow
     {
         try
         {
+            // SfRichTextRibbon — обёртка; настоящая лента находится внутри её шаблона.
+            var ribbon = FindDescendant<Syncfusion.Windows.Tools.Controls.Ribbon>(RichRibbon);
+            if (ribbon is null) { Log.Info("ribbon-tab: inner Ribbon not found"); return; }
             var bar = new RibbonBar { Header = Strings.ProtoGroup };
             bar.Items.Add(MakeRibbonButton(Strings.ExportPdf, ExportPdf_Click));
             bar.Items.Add(MakeRibbonButton(Strings.ExportTxt, ExportTxt_Click));
@@ -670,16 +674,28 @@ public partial class EditorWindow : RibbonWindow
             bar.Items.Add(MakeRibbonButton(Strings.RoundTrip, RoundTrip_Click));
             var tab = new RibbonTab { Caption = Strings.ProtoTab };
             tab.Items.Add(bar);
-            Ribbon.Items.Add(tab);
+            ribbon.Items.Add(tab);
         }
         catch (Exception ex) { Log.Error("ribbon-tab", ex); }
     }
 
     private static RibbonButton MakeRibbonButton(string label, RoutedEventHandler click)
     {
-        var b = new RibbonButton { Label = label, SizeForm = SizeForm.Small };
+        var b = new RibbonButton { Label = label };
         b.Click += click;
         return b;
+    }
+
+    private static T? FindDescendant<T>(DependencyObject root) where T : DependencyObject
+    {
+        int n = System.Windows.Media.VisualTreeHelper.GetChildrenCount(root);
+        for (int i = 0; i < n; i++)
+        {
+            var child = System.Windows.Media.VisualTreeHelper.GetChild(root, i);
+            if (child is T found) return found;
+            if (FindDescendant<T>(child) is { } deeper) return deeper;
+        }
+        return null;
     }
 
     private static void TryDelete(string path)

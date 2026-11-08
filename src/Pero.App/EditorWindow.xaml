@@ -15,7 +15,7 @@
         </Grid.RowDefinitions>
 
         <!-- Лента в стиле Word берёт команды у редактора через DataContext. -->
-        <syncfusion:SfRichTextRibbon x:Name="Ribbon" Grid.Row="0"
+        <syncfusion:SfRichTextRibbon x:Name="RichRibbon" Grid.Row="0"
                                      SnapsToDevicePixels="True"
                                      DataContext="{Binding ElementName=Editor}"/>
 
