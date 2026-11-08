@@ -223,3 +223,24 @@ with zipfile.ZipFile(OUT / "93-not-docx.docx", "w") as z:
     z.writestr("hello.txt", "это обычный zip")
 
 print("Готово:", ", ".join(sorted(p.name for p in OUT.glob("*.docx"))))
+
+# 6. Документы для замеров раздела 6 ТЗ (только с флагом --perf)
+if "--perf" in sys.argv:
+    for pages in (100, 500):
+        doc = Document()
+        header_footer(doc, f"Замер — {pages} страниц")
+        for pg in range(pages):
+            doc.add_heading(f"Раздел {pg + 1}", level=1 if pg % 10 == 0 else 2)
+            for _ in range(3):
+                doc.add_paragraph(LOREM * 4)
+            if pages == 100 and pg % 5 == 0:
+                t = doc.add_table(rows=4, cols=4)
+                t.style = "Table Grid"
+                for r in range(4):
+                    for c in range(4):
+                        t.cell(r, c).text = f"{pg}.{r}.{c}"
+            if pages == 100 and pg % 10 == 0:
+                doc.add_paragraph().add_run().add_picture(png("#2E75B6", f"p{pg}"), width=Cm(6))
+            doc.add_paragraph().add_run().add_break(WD_BREAK.PAGE)
+        doc.save(OUT / f"perf-{pages}p.docx")
+    print("Замеры: perf-100p.docx, perf-500p.docx")

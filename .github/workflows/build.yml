@@ -5,6 +5,9 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 env:
   PYTHONUTF8: '1'
   PYTHONIOENCODING: utf-8
@@ -35,7 +38,7 @@ jobs:
       - name: Reference documents
         run: |
           pip install python-docx pillow
-          python samples/make_samples.py samples/docx
+          python samples/make_samples.py samples/docx --perf
 
       - name: Inspect reference documents
         shell: pwsh
@@ -52,3 +55,29 @@ jobs:
         with:
           name: Pero-win-x64
           path: artifacts/Pero
+
+      - name: Screen 1920x1080 (целевой стенд ТЗ)
+        shell: pwsh
+        continue-on-error: true
+        run: Set-DisplayResolution -Width 1920 -Height 1080 -Force
+
+      - name: Lab — движок, лента, UI-прогон
+        continue-on-error: true
+        timeout-minutes: 30
+        env:
+          PERO_SYNCFUSION_KEY: ${{ secrets.SYNCFUSION_LICENSE_KEY }}
+        run: dotnet run --project tools/Pero.Lab -c Release -- all samples/docx artifacts/Pero/Pero.exe ci-out
+
+      - name: Results → ветка ci-results
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p ci-out/pero-logs
+          cp -r "$LOCALAPPDATA/Pero/Logs/." ci-out/pero-logs/ 2>/dev/null || true
+          cd ci-out
+          echo "run=${{ github.run_id }} sha=${{ github.sha }} date=$(date -u +%FT%TZ)" > RUN.txt
+          git init -q
+          git checkout -q -b ci-results
+          git add -A
+          git -c user.name=ci -c user.email=ci@localhost commit -qm "results ${{ github.run_id }}"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" ci-results
