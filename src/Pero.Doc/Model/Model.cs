@@ -21,7 +21,18 @@ public sealed class Document
 
     public Document Clone()
     {
-        var d = new Document { Section = Section.Clone(), Styles = Styles, Numbering = Numbering, Package = Package };
+        var d = new Document { Section = Section.Clone(), Styles = Styles, Numbering = Numbering, Package = Package, EvenAndOdd = EvenAndOdd };
+        d.Body.AddRange(Body.Select(b => b.Clone()));
+        d.HeadersFooters.AddRange(HeadersFooters.Select(h => h.Clone()));
+        return d;
+    }
+
+    /// <summary>
+    /// Снимок для сохранения в фоне: копия содержимого и пакета, независимая от дальнейших правок.
+    /// </summary>
+    public Document SnapshotForSave()
+    {
+        var d = new Document { Section = Section.Clone(), Styles = Styles.CloneForSave(), Numbering = Numbering, Package = Package.CloneShallow(), EvenAndOdd = EvenAndOdd };
         d.Body.AddRange(Body.Select(b => b.Clone()));
         d.HeadersFooters.AddRange(HeadersFooters.Select(h => h.Clone()));
         return d;

@@ -29,7 +29,15 @@ public sealed class StyleSheet
     public string MinorFont { get; set; } = "Calibri";
     public string MajorFont { get; set; } = "Calibri Light";
     /// <summary>Стили, добавленные при правке (например, «Заголовок 2» в документ без него).</summary>
-    public List<XElement> Added { get; } = [];
+    public List<XElement> Added { get; private set; } = [];
+
+    /// <summary>Копия для фонового сохранения: список добавленных стилей не меняется во время записи.</summary>
+    internal StyleSheet CloneForSave()
+    {
+        var c = (StyleSheet)MemberwiseClone();
+        c.Added = Added.Select(x => new XElement(x)).ToList();
+        return c;
+    }
 
     public string? DefaultParagraphStyleId =>
         ById.Values.FirstOrDefault(s => s.Type == StyleType.Paragraph && s.IsDefault)?.Id;

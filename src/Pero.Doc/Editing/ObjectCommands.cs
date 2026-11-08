@@ -146,7 +146,7 @@ public sealed partial class DocEditor
             var at = DeleteSelectionCore();
             var p = P(at.Para);
             InlineOps.InsertInlines(p, at.Offset, [new InlineImage { RelId = relId, Cx = cx, Cy = cy, DrawingXml = drawing, Props = InlineOps.PropsAt(p, at.Offset).Props }]);
-            return new Selection(at, new DocPos(at.Para, at.Offset + 1));
+            return Selection.At(new DocPos(at.Para, at.Offset + 1)); // курсор после рисунка, как в Word
         });
     }
 

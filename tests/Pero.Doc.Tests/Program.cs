@@ -6,4 +6,5 @@ RoundTripTests.Register(args.FirstOrDefault());
 EditTests.Register(args.FirstOrDefault());
 LayoutTests.Register(args.FirstOrDefault());
 RenderTests.Register(args.FirstOrDefault());
+SaveTests.Register(args.FirstOrDefault());
 return T.Run();
