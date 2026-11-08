@@ -37,19 +37,22 @@ public static class DocxReader
             else doc.Body.Add(ReadBlock(el, store));
         }
         if (doc.Body.Count == 0) doc.Body.Add(new Paragraph()); // при чтении ничего больше не добавляем
+        ReadHeadersFooters(doc, store);
+        if (store.FindRelTarget(RelSettings) is { } settings && store.LoadXml(settings)?.Root?.Element(W + "evenAndOddHeaders") is { } eo)
+            doc.EvenAndOdd = OnOff(eo) != false;
         return doc;
     }
 
-    internal static Block ReadBlock(XElement el, PackageStore store)
+    internal static Block ReadBlock(XElement el, PackageStore store, string? owner = null)
     {
-        if (el.Name == W + "p") return ReadParagraph(el, store);
-        if (el.Name == W + "tbl") return ReadTable(el, store);
+        if (el.Name == W + "p") return ReadParagraph(el, store, owner);
+        if (el.Name == W + "tbl") return ReadTable(el, store, owner);
         return new RawBlock(new XElement(el));
     }
 
     // ── абзац ────────────────────────────────────────────────────────────────
 
-    internal static Paragraph ReadParagraph(XElement p, PackageStore store)
+    internal static Paragraph ReadParagraph(XElement p, PackageStore store, string? owner = null)
     {
         var para = new Paragraph { Props = ReadParaProps(p.Element(W + "pPr")) };
         foreach (var child in p.Elements())
@@ -59,7 +62,7 @@ public static class DocxReader
             if (name == W + "r") ReadRun(child, para.Inlines, null);
             else if (name == W + "hyperlink")
             {
-                var link = ReadLink(child, store);
+                var link = ReadLink(child, store, owner);
                 foreach (var r in child.Elements())
                 {
                     if (r.Name == W + "r") ReadRun(r, para.Inlines, link);
@@ -80,11 +83,11 @@ public static class DocxReader
         return para;
     }
 
-    private static LinkRef ReadLink(XElement h, PackageStore store)
+    private static LinkRef ReadLink(XElement h, PackageStore store, string? owner)
     {
         string? relId = (string?)h.Attribute(R + "id");
         string? anchor = (string?)h.Attribute(W + "anchor");
-        string? url = relId is null ? null : store.ResolveTarget(relId);
+        string? url = relId is null ? null : store.ResolveTarget(relId, owner);
         var raw = new XElement(W + "hyperlinkProps", h.Attributes().Where(a => a.Name != R + "id" && a.Name != W + "anchor").Select(a => new XAttribute(a)));
         return new LinkRef(url, anchor, raw.HasAttributes ? raw : null);
     }
@@ -242,7 +245,7 @@ public static class DocxReader
 
     // ── таблица ──────────────────────────────────────────────────────────────
 
-    internal static Table ReadTable(XElement tbl, PackageStore store)
+    internal static Table ReadTable(XElement tbl, PackageStore store, string? owner = null)
     {
         var t = new Table { RawTblPr = tbl.Element(W + "tblPr") is { } tp ? new XElement(tp) : null };
         foreach (var g in tbl.Element(W + "tblGrid")?.Elements(W + "gridCol") ?? [])
@@ -267,7 +270,7 @@ public static class DocxReader
                         GridSpan = Math.Max(1, Int(tcPr?.Element(W + "gridSpan"), "val") ?? 1),
                         VMerge = tcPr?.Element(W + "vMerge") is { } vm ? ((string?)vm.Attribute(W + "val") == "restart" ? VMerge.Restart : VMerge.Continue) : VMerge.None,
                     };
-                    foreach (var b in c.Elements().Where(b => b.Name != W + "tcPr")) cell.Blocks.Add(ReadBlock(b, store));
+                    foreach (var b in c.Elements().Where(b => b.Name != W + "tcPr")) cell.Blocks.Add(ReadBlock(b, store, owner));
                     if (cell.Blocks.Count == 0 || cell.Blocks[^1] is not Paragraph) cell.Blocks.Add(new Paragraph());
                     row.Cells.Add(cell);
                 }
@@ -276,6 +279,25 @@ public static class DocxReader
             t.Rows.Add(row);
         }
         return t;
+    }
+
+    private static void ReadHeadersFooters(Model.Document doc, PackageStore store)
+    {
+        if (doc.Section.RawSectPr is not { } sp) return;
+        foreach (var r in sp.Elements().Where(e => e.Name == W + "headerReference" || e.Name == W + "footerReference"))
+        {
+            string? id = (string?)r.Attribute(R + "id");
+            if (id is null || store.ResolvePartPath(id) is not { } part || store.LoadXml(part)?.Root is not { } root) continue;
+            var hf = new HeaderFooter
+            {
+                Kind = r.Name == W + "headerReference" ? HfKind.Header : HfKind.Footer,
+                Type = (string?)r.Attribute(W + "type") ?? "default",
+                PartPath = part,
+            };
+            foreach (var el in root.Elements()) hf.Blocks.Add(ReadBlock(el, store, part));
+            if (hf.Blocks.Count == 0 || hf.Blocks.All(b => b is not Paragraph)) hf.Blocks.Add(new Paragraph());
+            doc.HeadersFooters.Add(hf);
+        }
     }
 
     // ── раздел ───────────────────────────────────────────────────────────────
@@ -294,6 +316,7 @@ public static class DocxReader
         s.MarginRight = Int(m, "right") ?? s.MarginRight;
         s.HeaderDistance = Int(m, "header") ?? s.HeaderDistance;
         s.FooterDistance = Int(m, "footer") ?? s.FooterDistance;
+        s.TitlePage = sectPr.Element(W + "titlePg") is { } tp && OnOff(tp) != false;
         return s;
     }
 }

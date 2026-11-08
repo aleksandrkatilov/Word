@@ -131,7 +131,7 @@ public sealed partial class DocEditor
         store.Parts[part] = bytes;
         store.Order.Add(part);
         store.EnsureContentTypeDefault(ext, ext == "png" ? "image/png" : "image/jpeg");
-        string relId = store.EnsureRelationship(RelImage, $"media/pero{n}.{ext}", external: false);
+        string relId = store.EnsureRelationship(RelImage, $"media/pero{n}.{ext}", external: false, StoryPart);
 
         const long EmuPerPx = 9525; // 96 dpi
         long cx = pixelWidth * EmuPerPx, cy = pixelHeight * EmuPerPx;
@@ -186,18 +186,9 @@ public sealed partial class DocEditor
         });
     }
 
-    public byte[]? ImageBytes(string relId)
-    {
-        string target = Doc.Package.ResolveTarget(relId);
-        if (target.Length == 0) return null;
-        var stack = new List<string>(target.StartsWith('/') || Doc.Package.MainDir.Length == 0 ? [] : Doc.Package.MainDir.Split('/'));
-        foreach (var seg in target.TrimStart('/').Split('/'))
-        {
-            if (seg == "..") { if (stack.Count > 0) stack.RemoveAt(stack.Count - 1); }
-            else if (seg is not ("." or "")) stack.Add(seg);
-        }
-        return Doc.Package.Parts.TryGetValue(string.Join('/', stack), out var b) ? b : null;
-    }
+    /// <summary>Байты изображения по связи; owner — часть, где стоит изображение (null — основная).</summary>
+    public byte[]? ImageBytes(string relId, string? owner = null) =>
+        Doc.Package.ResolvePartPath(relId, owner) is { } part && Doc.Package.Parts.TryGetValue(part, out var b) ? b : null;
 
     // ── таблицы ──────────────────────────────────────────────────────────────
 
@@ -401,7 +392,7 @@ public sealed partial class DocEditor
         if (CurrentCell() is not var (t, _, _)) return;
         Execute("Удалить таблицу", () =>
         {
-            var container = FindContainer(Doc.Body, t)!;
+            var container = FindContainer(StoryBlocks, t)!;
             int i = container.IndexOf(t);
             container.RemoveAt(i);
             if (container.Count == 0 || i >= container.Count || container[Math.Min(i, container.Count - 1)] is not Paragraph)
@@ -496,4 +487,54 @@ public sealed partial class DocEditor
         if (left is not null) s.MarginLeft = Math.Max(0, left.Value);
         return Selection;
     });
+
+    // ── колонтитулы и номера страниц ─────────────────────────────────────────
+
+    /// <summary>Колонтитул для правки: существующий для страницы или новый «обычный» (отменяемо).</summary>
+    public HeaderFooter OpenHeaderFooter(HfKind kind, int pageIndex)
+    {
+        if (Doc.HeaderFooterFor(kind, pageIndex) is { } existing) { EnterStory(existing); return existing; }
+        string type = pageIndex == 0 && Doc.Section.TitlePage ? "first" : "default";
+        EnterStory(null);
+        HeaderFooter? created = null;
+        Execute(kind == HfKind.Header ? "Верхний колонтитул" : "Нижний колонтитул", () =>
+        {
+            string dir = Doc.Package.MainDir.Length == 0 ? "" : Doc.Package.MainDir + "/";
+            string prefix = dir + (kind == HfKind.Header ? "header" : "footer");
+            int n = 1;
+            while (Doc.Package.Parts.ContainsKey($"{prefix}{n}.xml") || Doc.HeadersFooters.Any(h => h.PartPath == $"{prefix}{n}.xml")) n++;
+            created = new HeaderFooter { Kind = kind, Type = type, PartPath = $"{prefix}{n}.xml", Modified = true };
+            var p = new Paragraph();
+            if (Doc.Styles.ById.ContainsKey(kind == HfKind.Header ? "Header" : "Footer")) p.Props.StyleId = kind == HfKind.Header ? "Header" : "Footer";
+            created.Blocks.Add(p);
+            Doc.HeadersFooters.Add(created);
+            return Selection;
+        });
+        EnterStory(created);
+        return created!;
+    }
+
+    /// <summary>Особый колонтитул первой страницы.</summary>
+    public void SetTitlePage(bool on)
+    {
+        if (Doc.Section.TitlePage == on) return;
+        Execute("Особый колонтитул первой страницы", () => { Doc.Section.TitlePage = on; return Selection; });
+    }
+
+    /// <summary>Вставить поле номера страницы (PAGE) или числа страниц (NUMPAGES) в позицию курсора.</summary>
+    public void InsertPageField(bool totalPages = false)
+    {
+        Execute("Номер страницы", () =>
+        {
+            var at = DeleteSelectionCore();
+            var p = P(at.Para);
+            var (props, _) = InlineOps.PropsAt(p, at.Offset);
+            var run = new XElement(W + "r");
+            if (DocxWriter.BuildRPr(props) is { } rPr) run.Add(rPr);
+            run.Add(new XElement(W + "t", "1"));
+            var fld = new XElement(W + "fldSimple", new XAttribute(W + "instr", totalPages ? " NUMPAGES " : " PAGE "), run);
+            InlineOps.InsertInlines(p, at.Offset, [new RawInline(fld, visible: true) { DisplayText = "1" }]);
+            return Selection.At(new DocPos(at.Para, at.Offset + 1));
+        });
+    }
 }

@@ -16,13 +16,27 @@ public sealed class Document
     public Numbering Numbering { get; set; } = new();
     /// <summary>Исходный пакет: все части, кроме основной разметки, переносятся без изменений.</summary>
     internal Docx.PackageStore Package { get; set; } = Docx.PackageStore.Blank();
+    /// <summary>Колонтитулы последнего раздела.</summary>
+    public List<HeaderFooter> HeadersFooters { get; } = [];
 
     public Document Clone()
     {
         var d = new Document { Section = Section.Clone(), Styles = Styles, Numbering = Numbering, Package = Package };
         d.Body.AddRange(Body.Select(b => b.Clone()));
+        d.HeadersFooters.AddRange(HeadersFooters.Select(h => h.Clone()));
         return d;
     }
+
+    /// <summary>Колонтитул для страницы: первая (если «особый для первой»), чётная/нечётная, обычный.</summary>
+    public HeaderFooter? HeaderFooterFor(HfKind kind, int pageIndex)
+    {
+        if (pageIndex == 0 && Section.TitlePage) return HeadersFooters.FirstOrDefault(h => h.Kind == kind && h.Type == "first");
+        if (EvenAndOdd && pageIndex % 2 == 1 && HeadersFooters.FirstOrDefault(h => h.Kind == kind && h.Type == "even") is { } even) return even;
+        return HeadersFooters.FirstOrDefault(h => h.Kind == kind && h.Type == "default");
+    }
+
+    /// <summary>Разные колонтитулы чётных и нечётных страниц (settings.xml).</summary>
+    public bool EvenAndOdd { get; set; }
 
     public IEnumerable<Paragraph> AllParagraphs() => Walk(Body);
 
@@ -283,6 +297,28 @@ public sealed class TableCell
 public enum Orientation { Portrait, Landscape }
 
 /// <summary>Параметры страницы в twips. Исходный w:sectPr сохраняется, известные поля переписываются.</summary>
+public enum HfKind { Header, Footer }
+
+/// <summary>Колонтитул: отдельная часть пакета со своим содержимым и связями.</summary>
+public sealed class HeaderFooter
+{
+    public HfKind Kind { get; init; }
+    /// <summary>default, first или even.</summary>
+    public string Type { get; init; } = "default";
+    /// <summary>Часть пакета (word/header1.xml); если её ещё нет в пакете — создаётся при сохранении.</summary>
+    public required string PartPath { get; init; }
+    public List<Block> Blocks { get; } = [];
+    /// <summary>Колонтитул изменён: часть будет переписана при сохранении.</summary>
+    public bool Modified { get; set; }
+
+    public HeaderFooter Clone()
+    {
+        var h = new HeaderFooter { Kind = Kind, Type = Type, PartPath = PartPath, Modified = Modified };
+        h.Blocks.AddRange(Blocks.Select(b => b.Clone()));
+        return h;
+    }
+}
+
 public sealed class SectionProps
 {
     public int PageWidth { get; set; } = 11906;   // A4
@@ -294,6 +330,8 @@ public sealed class SectionProps
     public int MarginRight { get; set; } = 850;
     public int HeaderDistance { get; set; } = 708;
     public int FooterDistance { get; set; } = 708;
+    /// <summary>Особый колонтитул первой страницы (w:titlePg).</summary>
+    public bool TitlePage { get; set; }
     public XElement? RawSectPr { get; set; }
 
     public SectionProps Clone()

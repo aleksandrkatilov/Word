@@ -18,6 +18,9 @@ internal static class Ns
     public const string RelImage = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image";
     public const string RelStyles = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles";
     public const string RelNumbering = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering";
+    public const string RelSettings = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings";
+    public const string RelHeader = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header";
+    public const string RelFooter = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer";
     public const string RelTheme = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme";
 
     /// <summary>Порядок дочерних элементов w:pPr по схеме — Word отвергает файл при нарушении порядка.</summary>

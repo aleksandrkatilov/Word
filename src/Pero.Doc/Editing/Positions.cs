@@ -29,7 +29,8 @@ public sealed class ParaIndex
 {
     public List<ParaLocation> Items { get; } = [];
 
-    public ParaIndex(Document doc) => Walk(doc.Body, null, null, -1, -1, 0);
+    public ParaIndex(Document doc) : this(doc.Body) { }
+    public ParaIndex(List<Block> story) => Walk(story, null, null, -1, -1, 0);
 
     private void Walk(List<Block> blocks, TableCell? cell, Table? table, int row, int ci, int depth)
     {

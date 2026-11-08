@@ -236,7 +236,42 @@ internal static class EditTests
             Eq(false, ed.GetFormatState().Bold, "формат очищен");
         });
 
+        Test("Колонтитулы: новый верхний с номером страницы, отмена, сохранение", () =>
+        {
+            var ed = new DocEditor(Model.Document.CreateBlank());
+            ed.TypeText("Тело");
+            var hf = ed.OpenHeaderFooter(HfKind.Footer, 0);
+            ed.TypeText("Стр. ");
+            ed.InsertPageField();
+            Eq("Стр. \uFFFC", ed.P(0).Text, "текст колонтитула");
+            ed.EnterStory(null);
+            Eq("Тело", ed.P(0).Text, "основной текст не тронут");
+            var re = SaveReload(ed.Doc, out var bytes);
+            var f = re.HeaderFooterFor(HfKind.Footer, 0)!;
+            Assert(f is not null, "нижний колонтитул не сохранился");
+            Assert(f!.Blocks.OfType<Paragraph>().First().Inlines.OfType<RawInline>().Any(r => r.Xml.Name.LocalName == "fldSimple"), "нет поля PAGE");
+            Assert(new PackageInspector(Pero.Core.Compatibility.CompatibilityRegistry.CreateDefault()).Inspect(new MemoryStream(bytes), "x").Status != InspectionStatus.Rejected, "пакет отклонён");
+            File.WriteAllBytes(Path.Combine(Path.GetTempPath(), "pero-footer.docx"), bytes);
+            // отмена всех шагов убирает колонтитул
+            while (ed.CanUndo) ed.Undo();
+            Eq(0, ed.Doc.HeadersFooters.Count, "колонтитул после полной отмены");
+        });
+
         if (samples is null) return;
+
+        Test("Правка существующего колонтитула (эталон 01) сохраняется, остальное без потерь", () =>
+        {
+            string src = Path.Combine(samples, "01-styles-lists-multipage.docx");
+            var ed = new DocEditor(DocxReader.Read(src));
+            var h = ed.Doc.HeadersFooters.First(x => x.Kind == HfKind.Header);
+            ed.EnterStory(h);
+            ed.TypeText("НОВОЕ ");
+            var re = SaveReload(ed.Doc, out var bytes);
+            var text = string.Concat(re.HeadersFooters.First(x => x.Kind == HfKind.Header).Blocks.OfType<Paragraph>().Select(p => p.Text));
+            Assert(text.StartsWith("НОВОЕ "), "правка колонтитула потеряна: " + text);
+            var diffs = DocxFingerprint.FromFile(src).CompareTo(DocxFingerprint.FromStream(new MemoryStream(bytes))).Where(d => d.IsLoss).ToList();
+            Assert(diffs.Count == 0, string.Join("; ", diffs.Select(d => $"{d.Property}: {d.Before} → {d.After}")));
+        });
 
         Test("Правка эталона 01: текст, шрифт, выравнивание — без потерь остального", () =>
         {

@@ -85,25 +85,42 @@ internal sealed class PackageStore
         return c;
     }
 
-    // ── связи основной части ─────────────────────────────────────────────────
+    // ── связи частей (по умолчанию — основной) ───────────────────────────────
 
-    public string ResolveTarget(string relId)
+    public static string DirOf(string part) => part.Contains('/') ? part[..part.LastIndexOf('/')] : "";
+    public static string RelsPathOf(string part) => (DirOf(part).Length == 0 ? "" : DirOf(part) + "/") + "_rels/" + Path.GetFileName(part) + ".rels";
+
+    private XElement? FindRel(string relId, string? owner) =>
+        LoadXml(RelsPathOf(owner ?? MainPart))?.Root?.Elements(Ns.Rel + "Relationship").FirstOrDefault(r => (string?)r.Attribute("Id") == relId);
+
+    public string ResolveTarget(string relId, string? owner = null) => (string?)FindRel(relId, owner)?.Attribute("Target") ?? "";
+
+    public string? RelTargetMode(string relId, string? owner = null) => (string?)FindRel(relId, owner)?.Attribute("TargetMode");
+
+    /// <summary>Имя части пакета, на которую указывает внутренняя связь.</summary>
+    public string? ResolvePartPath(string relId, string? owner = null)
     {
-        var rels = LoadXml(MainRelsPath);
-        var rel = rels?.Root?.Elements(Ns.Rel + "Relationship").FirstOrDefault(r => (string?)r.Attribute("Id") == relId);
-        return (string?)rel?.Attribute("Target") ?? "";
+        string target = ResolveTarget(relId, owner);
+        if (target.Length == 0 || RelTargetMode(relId, owner) == "External") return null;
+        return Combine(DirOf(owner ?? MainPart), target);
     }
 
-    public string? RelTargetMode(string relId)
+    public static string Combine(string dir, string target)
     {
-        var rels = LoadXml(MainRelsPath);
-        return (string?)rels?.Root?.Elements(Ns.Rel + "Relationship").FirstOrDefault(r => (string?)r.Attribute("Id") == relId)?.Attribute("TargetMode");
+        var stack = new List<string>(target.StartsWith('/') || dir.Length == 0 ? [] : dir.Split('/'));
+        foreach (var seg in target.TrimStart('/').Split('/'))
+        {
+            if (seg == "..") { if (stack.Count > 0) stack.RemoveAt(stack.Count - 1); }
+            else if (seg is not ("." or "")) stack.Add(seg);
+        }
+        return string.Join('/', stack);
     }
 
-    /// <summary>Найти или добавить связь основной части. Возвращает Id.</summary>
-    public string EnsureRelationship(string type, string target, bool external)
+    /// <summary>Найти или добавить связь части. Возвращает Id.</summary>
+    public string EnsureRelationship(string type, string target, bool external, string? owner = null)
     {
-        var rels = LoadXml(MainRelsPath) ?? new XDocument(new XElement(Ns.Rel + "Relationships"));
+        string relsPath = RelsPathOf(owner ?? MainPart);
+        var rels = LoadXml(relsPath) ?? new XDocument(new XElement(Ns.Rel + "Relationships"));
         var root = rels.Root!;
         var existing = root.Elements(Ns.Rel + "Relationship").FirstOrDefault(r =>
             (string?)r.Attribute("Type") == type && (string?)r.Attribute("Target") == target &&
@@ -114,17 +131,16 @@ internal sealed class PackageStore
         var rel = new XElement(Ns.Rel + "Relationship", new XAttribute("Id", id), new XAttribute("Type", type), new XAttribute("Target", target));
         if (external) rel.Add(new XAttribute("TargetMode", "External"));
         root.Add(rel);
-        SaveXml(MainRelsPath, rels);
+        SaveXml(relsPath, rels);
         return id;
     }
 
-    public string? FindRelTarget(string type)
+    public string? FindRelTarget(string type, string? owner = null)
     {
-        var rels = LoadXml(MainRelsPath);
+        var rels = LoadXml(RelsPathOf(owner ?? MainPart));
         var rel = rels?.Root?.Elements(Ns.Rel + "Relationship").FirstOrDefault(r => (string?)r.Attribute("Type") == type);
         if (rel is null) return null;
-        string target = (string)rel.Attribute("Target")!;
-        return target.StartsWith('/') ? target.TrimStart('/') : (MainDir.Length == 0 ? target : MainDir + "/" + target);
+        return Combine(DirOf(owner ?? MainPart), (string)rel.Attribute("Target")!);
     }
 
     public void EnsureContentTypeDefault(string extension, string contentType)

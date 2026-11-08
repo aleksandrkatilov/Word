@@ -23,9 +23,17 @@ public static class DocxWriter
         if (body.Parent is null) root.Add(body);
         body.RemoveNodes();
 
-        var ctx = new Ctx(store);
+        var ctx = new Ctx(store, null);
         foreach (var b in doc.Body) body.Add(WriteBlock(b, ctx));
-        body.Add(WriteSection(doc.Section));
+        var newRefs = WriteHeadersFooters(doc, store);
+        var sectPr = WriteSection(doc.Section);
+        if (newRefs.Count > 0)
+        {
+            sectPr.Add(newRefs);
+            var ordered = sectPr.Elements().OrderBy(x => OrderIndex(SectPrOrder, x)).ToList();
+            sectPr.RemoveNodes(); sectPr.Add(ordered);
+        }
+        body.Add(sectPr);
         store.SaveXml(store.MainPart, shell);
 
         if (doc.Styles.Added.Count > 0) AppendStyles(store, doc.Styles.Added);
@@ -38,9 +46,40 @@ public static class DocxWriter
         Write(doc, fs);
     }
 
-    private sealed class Ctx(PackageStore store)
+    private sealed class Ctx(PackageStore store, string? owner)
     {
         public PackageStore Store { get; } = store;
+        /// <summary>Часть, в которую пишется разметка (null — основная): от неё считаются связи.</summary>
+        public string? Owner { get; } = owner;
+    }
+
+    /// <summary>Переписывает изменённые колонтитулы; для новых создаёт части и возвращает ссылки для sectPr.</summary>
+    private static List<XElement> WriteHeadersFooters(Model.Document doc, PackageStore store)
+    {
+        var refs = new List<XElement>();
+        foreach (var hf in doc.HeadersFooters.Where(h => h.Modified || !store.Parts.ContainsKey(h.PartPath)))
+        {
+            bool header = hf.Kind == HfKind.Header;
+            string part = hf.PartPath;
+            bool isNew = !store.Parts.ContainsKey(part);
+            var xml = store.LoadXml(part) ?? new XDocument(new XElement(W + (header ? "hdr" : "ftr")));
+            var root = xml.Root!;
+            EnsureNamespaces(root);
+            root.RemoveNodes();
+            var ctx = new Ctx(store, part);
+            foreach (var b in hf.Blocks) root.Add(WriteBlock(b, ctx));
+            if (!root.Elements(W + "p").Any()) root.Add(new XElement(W + "p"));
+            store.SaveXml(part, xml);
+            if (isNew)
+            {
+                string mainDir = PackageStore.DirOf(store.MainPart);
+                string target = mainDir.Length > 0 && part.StartsWith(mainDir + "/") ? part[(mainDir.Length + 1)..] : "/" + part;
+                string id = store.EnsureRelationship(header ? RelHeader : RelFooter, target, external: false);
+                store.EnsureContentTypeOverride(part, "application/vnd.openxmlformats-officedocument.wordprocessingml." + (header ? "header" : "footer") + "+xml");
+                refs.Add(new XElement(W + (header ? "headerReference" : "footerReference"), new XAttribute(W + "type", hf.Type), new XAttribute(R + "id", id)));
+            }
+        }
+        return refs;
     }
 
     private static void EnsureNamespaces(XElement root)
@@ -74,7 +113,7 @@ public static class DocxWriter
             if (inl.Link is null) { el.Add(WriteInline(inl)); i++; continue; }
             var link = inl.Link;
             var h = new XElement(W + "hyperlink");
-            if (link.Url is not null) h.Add(new XAttribute(R + "id", ctx.Store.EnsureRelationship(RelHyperlink, link.Url, external: true)));
+            if (link.Url is not null) h.Add(new XAttribute(R + "id", ctx.Store.EnsureRelationship(RelHyperlink, link.Url, external: true, ctx.Owner)));
             if (link.Anchor is not null) h.Add(new XAttribute(W + "anchor", link.Anchor));
             if (link.RawHyperlinkProps is not null) h.Add(link.RawHyperlinkProps.Attributes().Select(a => new XAttribute(a)));
             while (i < p.Inlines.Count && link.SameAs(p.Inlines[i].Link)) { h.Add(WriteInline(p.Inlines[i])); i++; }
@@ -352,6 +391,9 @@ public static class DocxWriter
         m.SetAttributeValue(W + "left", s.MarginLeft);
         m.SetAttributeValue(W + "header", s.HeaderDistance);
         m.SetAttributeValue(W + "footer", s.FooterDistance);
+        var tp = e.Element(W + "titlePg");
+        if (s.TitlePage && tp is null) e.Add(new XElement(W + "titlePg"));
+        else if (!s.TitlePage) tp?.Remove();
         var ordered = e.Elements().OrderBy(x => OrderIndex(SectPrOrder, x)).ToList();
         e.RemoveNodes();
         e.Add(ordered);

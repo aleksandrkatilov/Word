@@ -182,5 +182,5 @@ public sealed partial class DocEditor
         Rebuild();
     }
 
-    private void Rebuild() => Index = new ParaIndex(Doc);
+    private void Rebuild() => Index = new ParaIndex(StoryBlocks);
 }

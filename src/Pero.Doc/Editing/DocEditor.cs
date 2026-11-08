@@ -8,7 +8,7 @@ namespace Pero.Doc.Editing;
 /// </summary>
 public sealed partial class DocEditor
 {
-    private sealed record Snapshot(Document Doc, Selection Selection, string Name);
+    private sealed record Snapshot(Document Doc, Selection Selection, string Name, int Story);
 
     private readonly Stack<Snapshot> _undo = new();
     private readonly Stack<Snapshot> _redo = new();
@@ -18,6 +18,12 @@ public sealed partial class DocEditor
 
     public Document Doc { get; private set; }
     public ParaIndex Index { get; private set; }
+    /// <summary>Редактируемый колонтитул; null — основной текст.</summary>
+    public HeaderFooter? Story { get; private set; }
+    private int StoryNo => Story is null ? -1 : Doc.HeadersFooters.IndexOf(Story);
+    internal List<Block> StoryBlocks => Story?.Blocks ?? Doc.Body;
+    /// <summary>Часть пакета, от которой считаются связи новых ссылок и изображений.</summary>
+    internal string? StoryPart => Story?.PartPath;
     public Selection Selection { get; private set; }
     /// <summary>Оформление для следующего ввода при пустом выделении (после Ctrl+B без выделения).</summary>
     public RunProps? PendingProps { get; private set; }
@@ -50,6 +56,18 @@ public sealed partial class DocEditor
         SelectionChanged?.Invoke(this, EventArgs.Empty);
     }
 
+    /// <summary>Перейти к правке колонтитула (или основного текста при null).</summary>
+    public void EnterStory(HeaderFooter? hf, DocPos? at = null)
+    {
+        if (hf is not null && !Doc.HeadersFooters.Contains(hf)) throw new ArgumentException("колонтитул не из этого документа");
+        Story = hf;
+        Index = new ParaIndex(StoryBlocks);
+        _lastName = null;
+        PendingProps = null;
+        Selection = Selection.At(Index.Clamp(at ?? Index.DocumentStart));
+        SelectionChanged?.Invoke(this, EventArgs.Empty);
+    }
+
     public void SelectAll() => Select(new Selection(Index.DocumentStart, Index.DocumentEnd));
 
     /// <summary>Выполнить изменение как транзакцию. Функция возвращает новое выделение.</summary>
@@ -58,21 +76,23 @@ public sealed partial class DocEditor
         bool merge = coalesceTyping && _lastName == name && Selection.IsEmpty && Selection.Active == _lastTypingEnd &&
                      (DateTime.UtcNow - _lastTypingAt).TotalSeconds < 3 && _undo.Count > 0;
         Document? before = merge ? null : Doc.Clone();
+        int storyBefore = StoryNo;
         var selBefore = Selection;
         Selection after;
         try { after = change(); }
         catch
         {
-            if (before is not null) { Doc = before; Index = new ParaIndex(Doc); }
+            if (before is not null) { int no = StoryNo; Doc = before; Story = no >= 0 ? Doc.HeadersFooters[no] : null; Index = new ParaIndex(StoryBlocks); }
             throw;
         }
         if (before is not null)
         {
-            _undo.Push(new Snapshot(before, selBefore, name));
+            _undo.Push(new Snapshot(before, selBefore, name, storyBefore));
             Trim();
         }
         _redo.Clear();
-        Index = new ParaIndex(Doc);
+        if (Story is not null) Story.Modified = true;
+        Index = new ParaIndex(StoryBlocks);
         Selection = new Selection(Index.Clamp(after.Anchor), Index.Clamp(after.Active));
         _lastName = coalesceTyping ? name : null;
         _lastTypingEnd = Selection.Active;
@@ -97,9 +117,10 @@ public sealed partial class DocEditor
     {
         if (from.Count == 0) return;
         var s = from.Pop();
-        to.Push(new Snapshot(Doc, Selection, s.Name));
+        to.Push(new Snapshot(Doc, Selection, s.Name, StoryNo));
         Doc = s.Doc;
-        Index = new ParaIndex(Doc);
+        Story = s.Story >= 0 && s.Story < Doc.HeadersFooters.Count ? Doc.HeadersFooters[s.Story] : null;
+        Index = new ParaIndex(StoryBlocks);
         Selection = new Selection(Index.Clamp(s.Selection.Anchor), Index.Clamp(s.Selection.Active));
         _lastName = null;
         PendingProps = null;
