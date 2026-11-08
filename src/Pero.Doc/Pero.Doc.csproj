@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Собственное ядро «Пера»: модель документа, DOCX, правка с отменой, разметка строк и страниц.
+       Без внешних зависимостей и без WPF — проверяется тестами на любой ОС. -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Pero.Doc</RootNamespace>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Pero.Doc.Tests" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Pero.Core\Pero.Core.csproj" />
+  </ItemGroup>
+</Project>
