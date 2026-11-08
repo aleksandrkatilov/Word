@@ -473,7 +473,7 @@ public sealed partial class EditorWindow
         if (dlg.ShowDialog() != true) return;
         var (pw, ph) = dlg.PaperPortrait;
         var o = dlg.Orientation;
-        int top = dlg.Top, bottom = dlg.Bottom, left = dlg.Left, right = dlg.Right;
+        int top = dlg.MarginTopTw, bottom = dlg.MarginBottomTw, left = dlg.MarginLeftTw, right = dlg.MarginRightTw;
         Ed.Execute("Параметры страницы", () =>
         {
             var s = Ed.Doc.Section;

@@ -149,12 +149,17 @@ public sealed class HorizontalRuler : RulerBase
         var page = View.Layout.Pages[Page];
         var sec = View.Editor.Doc.Section;
         var (aL, aR) = Area();
+        // средняя полоса — граница поля; маркеры отступов — у верхнего и нижнего края (как в Word)
+        bool middle = p.Y >= ActualHeight * 0.3 && p.Y <= ActualHeight * 0.7;
+        if (middle && Math.Abs(p.X - X(sec.MarginLeft / 20.0)) <= 5) return "ml";
+        if (middle && Math.Abs(p.X - X(page.Width - sec.MarginRight / 20.0)) <= 5) return "mr";
         if (Para() is { } ep)
         {
             double first = X(aL + (ep.IndLeft + ep.IndFirst) / 20.0), indL = X(aL + ep.IndLeft / 20.0), indR = X(aR - ep.IndRight / 20.0);
-            if (p.Y < ActualHeight / 2 && Math.Abs(p.X - first) <= 6) return "if";
-            if (p.Y >= ActualHeight / 2 && Math.Abs(p.X - indL) <= 6) return "il";
-            if (p.Y >= ActualHeight / 2 && Math.Abs(p.X - indR) <= 6) return "ir";
+            if (p.Y < ActualHeight * 0.3 && Math.Abs(p.X - first) <= 6) return "if";
+            if (p.Y > ActualHeight * 0.7 && Math.Abs(p.X - indL) <= 6) return "il";
+            if (p.Y > ActualHeight * 0.7 && Math.Abs(p.X - indR) <= 6) return "ir";
+            if (!middle && Math.Abs(p.X - first) <= 6) return "if";
         }
         if (Math.Abs(p.X - X(sec.MarginLeft / 20.0)) <= 4) return "ml";
         if (Math.Abs(p.X - X(page.Width - sec.MarginRight / 20.0)) <= 4) return "mr";
@@ -164,7 +169,11 @@ public sealed class HorizontalRuler : RulerBase
     protected override void OnMouseMove(MouseEventArgs e)
     {
         base.OnMouseMove(e);
-        var p = e.GetPosition(this);
+        Track(e.GetPosition(this));
+    }
+
+    private void Track(Point p)
+    {
         if (Dragging is null)
         {
             var hit = HitTest(p);
@@ -212,6 +221,7 @@ public sealed class HorizontalRuler : RulerBase
     {
         base.OnMouseLeftButtonUp(e);
         if (Dragging is null) return;
+        Track(e.GetPosition(this));
         string what = Dragging;
         Dragging = null;
         ReleaseMouseCapture();
@@ -287,7 +297,11 @@ public sealed class VerticalRuler : RulerBase
     protected override void OnMouseMove(MouseEventArgs e)
     {
         base.OnMouseMove(e);
-        var p = e.GetPosition(this);
+        Track(e.GetPosition(this));
+    }
+
+    private void Track(Point p)
+    {
         if (Dragging is null)
         {
             var hit = HitTest(p);
@@ -318,6 +332,7 @@ public sealed class VerticalRuler : RulerBase
     {
         base.OnMouseLeftButtonUp(e);
         if (Dragging is null) return;
+        Track(e.GetPosition(this));
         string what = Dragging;
         Dragging = null;
         ReleaseMouseCapture();

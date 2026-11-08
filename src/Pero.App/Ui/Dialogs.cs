@@ -128,10 +128,10 @@ public sealed class PageSetupDialog : FormDialog
     private readonly TextBox _top, _bottom, _left, _right;
     public (int W, int H) PaperPortrait { get; private set; }
     public Pero.Doc.Model.Orientation Orientation => _orient.SelectedIndex == 1 ? Pero.Doc.Model.Orientation.Landscape : Pero.Doc.Model.Orientation.Portrait;
-    public int Top => Tw(_top.Text);
-    public int Bottom => Tw(_bottom.Text);
-    public int Left => Tw(_left.Text);
-    public int Right => Tw(_right.Text);
+    public int MarginTopTw => Tw(_top.Text);
+    public int MarginBottomTw => Tw(_bottom.Text);
+    public int MarginLeftTw => Tw(_left.Text);
+    public int MarginRightTw => Tw(_right.Text);
 
     private static int Tw(string s) => TryNum(s, out double v) ? (int)Math.Round(v * TwPerCm) : 0;
 
@@ -162,7 +162,7 @@ public sealed class PageSetupDialog : FormDialog
         foreach (var b in new[] { _top, _bottom, _left, _right })
             if (!TryNum(b.Text, out double v) || v < 0 || v > 20) return "Поля — числа от 0 до 20 см.";
         var (pw, ph) = Orientation == Pero.Doc.Model.Orientation.Landscape ? (PaperPortrait.H, PaperPortrait.W) : PaperPortrait;
-        if (Left + Right > pw - 1440 || Top + Bottom > ph - 1440) return "Поля не помещаются на странице.";
+        if (MarginLeftTw + MarginRightTw > pw - 1440 || MarginTopTw + MarginBottomTw > ph - 1440) return "Поля не помещаются на странице.";
         return null;
     }
 }

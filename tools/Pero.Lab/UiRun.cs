@@ -178,6 +178,16 @@ public sealed class UiRun(string exe, string samples, string outDir, Action<stri
             Thread.Sleep(2000);
             var sec2 = DocxReader.Read(path).Section;
             Check(sec2.MarginLeft == 1701 && sec2.MarginTop == 1134, $"после отмены поля {sec2.MarginLeft}/{sec2.MarginTop}");
+            // отступ первой строки: верхний маркер на +1,25 см
+            ClickPage(s.Window);
+            int topY = r.Top + 3;
+            Mouse.Drag(new System.Drawing.Point((int)Math.Round(pageLeft + 113.4), topY), new System.Drawing.Point((int)Math.Round(pageLeft + 113.4 + 47.2), topY));
+            Thread.Sleep(600);
+            Shot("ui-ruler-first-line");
+            Keyboard.TypeSimultaneously(VirtualKeyShort.CONTROL, VirtualKeyShort.KEY_S);
+            Thread.Sleep(2000);
+            var para = DocxReader.Read(path).AllParagraphs().First();
+            Check(para.Props.IndFirst is int fi && Math.Abs(fi - 709) <= 40, $"отступ первой строки после линейки: {para.Props.IndFirst}");
             // скрыть линейки через «Вид»
             ClickMenu(s.Window, "Вид", "Горизонтальная линейка");
             ClickMenu(s.Window, "Вид", "Вертикальная линейка");
@@ -344,6 +354,7 @@ public sealed class UiRun(string exe, string samples, string outDir, Action<stri
 
         Scenario("crash-recovery", () =>
         {
+            if (Directory.Exists(RecoveryDir)) Directory.Delete(RecoveryDir, true);
             string path = Copy("02-tables");
             var s = Start(path);
             WaitTitle(s.Window, "02-tables");
@@ -418,7 +429,7 @@ public sealed class UiRun(string exe, string samples, string outDir, Action<stri
         while (sw.Elapsed < TimeSpan.FromSeconds(60))
         {
             var w = _auto.GetDesktop().FindAllChildren(cf => cf.ByProcessId(app.ProcessId))
-                .FirstOrDefault(e => (e.Name ?? "").EndsWith("Перо", StringComparison.Ordinal) && e.ControlType == FlaUI.Core.Definitions.ControlType.Window);
+                .FirstOrDefault(e => (e.Name ?? "").EndsWith(" — Перо", StringComparison.Ordinal) && e.ControlType == FlaUI.Core.Definitions.ControlType.Window);
             if (w is not null) { _coldStart ??= sw.ElapsedMilliseconds; return w.AsWindow(); }
             Thread.Sleep(200);
         }
