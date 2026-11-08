@@ -68,9 +68,11 @@ public static class PageSetup
     private static void ApplyToDocument(SfRichTextBoxAdv editor, Action<SelectionSectionFormat> change, Action<SectionFormat>? direct = null)
     {
         var before = Current(editor);
+        Log.Info($"PAGESETUP start {before.Page}/{before.Margin} readOnly={editor.IsReadOnly}");
         var sel = editor.Selection;
         string startIndex = sel.Start.HierarchicalIndex, endIndex = sel.End.HierarchicalIndex;
         sel.Select(editor.Document.DocumentStart, editor.Document.DocumentEnd);
+        Log.Info("PAGESETUP selected all");
         try { change(sel.SectionFormat); }
         finally
         {

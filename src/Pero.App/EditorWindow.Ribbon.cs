@@ -290,7 +290,7 @@ public partial class EditorWindow
 
     private void Layout(Action change)
     {
-        if (Editor.IsReadOnly) return;
+        if (Editor.IsReadOnly) { Log.Info("LAYOUT skipped: read-only"); return; }
         try { change(); }
         catch (Exception ex) { Log.Error("layout", ex); MessageBox.Show(this, ex.Message, Strings.AppName); }
         Editor.Focus();

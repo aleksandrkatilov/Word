@@ -87,6 +87,7 @@ public static class EngineRoundTrip
                 log($"PERF {name}: pages={pages} load median={Median(loads)} p95≈{(loads.Count > 0 ? loads.Max() : 0)} ms; save median={Median(saves)} ms; peakWS={Process.GetCurrentProcess().PeakWorkingSet64 / (1024 * 1024)} MB");
         }
         results.Add(await EditRoundTrip(editor, win, samplesDir, work, outDir, log));
+        results.Add(await PageSetupRoundTrip(editor, win, samplesDir, work, outDir, log));
         win.Close();
         WriteReport(results, Path.Combine(outDir, "engine-roundtrip.md"));
         return results;
@@ -137,6 +138,38 @@ public static class EngineRoundTrip
         {
             log("edit roundtrip FAILED: " + ex);
             return new Result("01-edit-via-api", "Ok", 0, 0, 0, [], ex.GetType().Name + ": " + ex.Message);
+        }
+    }
+
+    /// <summary>Код вкладки «Макет» приложения (Pero.Services.PageSetup) на движке без интерфейса.</summary>
+    private static async Task<Result> PageSetupRoundTrip(SfRichTextBoxAdv editor, Window win, string samplesDir, string work, string outDir, Action<string> log)
+    {
+        string src = Path.Combine(samplesDir, "01-styles-lists-multipage.docx");
+        try
+        {
+            editor.Load(src);
+            await WaitLayout(editor, TimeSpan.FromSeconds(60));
+            var sw = Stopwatch.StartNew();
+            Pero.Services.PageSetup.SetOrientation(editor, landscape: true);
+            log($"PageSetup.SetOrientation: {sw.ElapsedMilliseconds} ms → {Pero.Services.PageSetup.Current(editor)}");
+            sw.Restart();
+            Pero.Services.PageSetup.SetMargins(editor, 12.7, 12.7, 12.7, 12.7);
+            log($"PageSetup.SetMargins: {sw.ElapsedMilliseconds} ms → {Pero.Services.PageSetup.Current(editor)}");
+            await WaitLayout(editor, TimeSpan.FromSeconds(60));
+            Lab.Shot(win, Path.Combine(outDir, "01-pagesetup.png"));
+            string engineOut = Path.Combine(work, "engine-ps.docx");
+            editor.Save(engineOut);
+            var fp = DocxFingerprint.FromFile(Watermark.StripIfTrial(engineOut));
+            var dims = fp.PageSize.Split(' ')[0].Split('x').Select(v => int.TryParse(v, out int n) ? n : 0).ToArray();
+            var problems = new List<DocxFingerprint.Difference>();
+            if (dims.Length != 2 || dims[0] <= dims[1]) problems.Add(new("Ориентация", "", fp.PageSize, true));
+            if (!fp.PageMargins.Contains("L72")) problems.Add(new("Поля", "", fp.PageMargins, true));
+            return new Result("01-pagesetup-app-code", "Ok", editor.PageCount, 0, 0, problems, null);
+        }
+        catch (Exception ex)
+        {
+            log("pagesetup FAILED: " + ex);
+            return new Result("01-pagesetup-app-code", "Ok", 0, 0, 0, [], ex.GetType().Name + ": " + ex.Message);
         }
     }
 

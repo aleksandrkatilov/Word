@@ -17,6 +17,11 @@
     <PackageReference Include="FlaUI.UIA3" Version="4.0.0" />
   </ItemGroup>
   <ItemGroup>
+    <!-- Тот же код параметров страницы, что в приложении, — проверяется напрямую на движке. -->
+    <Compile Include="..\..\src\Pero.App\Services\PageSetup.cs" Link="App\PageSetup.cs" />
+    <Compile Include="..\..\src\Pero.App\Services\Log.cs" Link="App\Log.cs" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\..\src\Pero.Core\Pero.Core.csproj" />
   </ItemGroup>
 </Project>
