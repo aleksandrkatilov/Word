@@ -3,6 +3,7 @@ using System.Text;
 using Pero.Core.Compatibility;
 using Pero.Core.Files;
 using Pero.Core.Packaging;
+using Pero.Core.Security;
 using Pero.Core.Tests;
 
 Console.OutputEncoding = Encoding.UTF8;
@@ -280,6 +281,39 @@ Test("Реестр совместимости переопределяется �
     Assert(reg[Construct.Equations].RoundTripSafe && reg[Construct.Equations].Verified, "переопределение не применено");
     Assert(!reg[Construct.Charts].RoundTripSafe, "остальные значения потеряны");
     Assert(reg.ToJson().Contains("\"Equations\""), "JSON");
+});
+
+// ── Ссылки (LINK-01) ───────────────────────────────────────────────────────
+Test("Ссылки: веб и почта — с подтверждением, опасные схемы — блок", () =>
+{
+    Assert(LinkPolicy.Evaluate("https://example.com/a?b=1").Decision == LinkDecision.Confirm, "https");
+    Assert(LinkPolicy.Evaluate("mailto:a@b.ru").Decision == LinkDecision.Confirm, "mailto");
+    Assert(LinkPolicy.Evaluate("www.example.com").Decision == LinkDecision.Confirm, "www");
+    Assert(LinkPolicy.Evaluate("#_Toc123").Decision == LinkDecision.Allow, "закладка");
+    foreach (var bad in new[] { "javascript:alert(1)", "vbscript:x", "data:text/html,<b>", "ms-msdt:/id", "search-ms:query=x", "file://server/share/x.docx", "file:///C:/Windows/calc.exe", "", "http://" })
+        Assert(LinkPolicy.Evaluate(bad).Decision == LinkDecision.Block, "не заблокировано: " + bad);
+    Assert(LinkPolicy.Evaluate("file:///C:/Users/me/report.pdf").Decision == LinkDecision.Confirm, "локальный pdf");
+});
+
+// ── Вставка из браузера (EDIT-03) ──────────────────────────────────────────
+Test("HTML из буфера: скрипты, обработчики и опасные ссылки удаляются", () =>
+{
+    string dirty = "<p onclick=\"steal()\">Текст <b>жирный</b></p><script>alert(1)</script>" +
+                   "<a href=\"javascript:alert(2)\">x</a><a href=\"https://ok.ru\">ok</a>" +
+                   "<img src=\"https://tracker.example/p.gif\"><img src=\"data:image/png;base64,iVBORw0KGgo=\">" +
+                   "<iframe src=\"https://evil\"></iframe><scr<script>x</script>ipt>alert(3)</script>" +
+                   "<span style=\"background:url(https://x)\">s</span><span style=\"color:red\">r</span>";
+    string clean = HtmlClipboardSanitizer.Sanitize(dirty);
+    foreach (var bad in new[] { "onclick", "<script", "javascript:", "tracker.example", "<iframe", "url(" })
+        Assert(!clean.Contains(bad, StringComparison.OrdinalIgnoreCase), $"осталось «{bad}»: {clean}");
+    foreach (var good in new[] { "<b>жирный</b>", "https://ok.ru", "data:image/png;base64", "color:red" })
+        Assert(clean.Contains(good), $"потеряно «{good}»: {clean}");
+});
+
+Test("CF_HTML: фрагмент извлекается и упаковывается обратно", () =>
+{
+    string cf = HtmlClipboardSanitizer.ToCfHtml("<p>Привет</p>");
+    Assert(HtmlClipboardSanitizer.ExtractFragment(cf) == "<p>Привет</p>", "фрагмент: " + HtmlClipboardSanitizer.ExtractFragment(cf));
 });
 
 // ── запуск ─────────────────────────────────────────────────────────────────
