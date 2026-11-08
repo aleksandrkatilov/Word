@@ -16,5 +16,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Pero.Core\Pero.Core.csproj" />
     <ProjectReference Include="..\..\src\Pero.Doc\Pero.Doc.csproj" />
+    <!-- Окно приложения для снимков при 150 % и 200 % (AC-01): рисуется в памяти с нужным DPI. -->
+    <ProjectReference Include="..\..\src\Pero.App\Pero.App.csproj" />
   </ItemGroup>
 </Project>

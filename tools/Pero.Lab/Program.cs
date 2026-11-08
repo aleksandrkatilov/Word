@@ -39,6 +39,8 @@ public static class Program
             string dir = Path.GetDirectoryName(Path.GetFullPath(args[2]))!;
             Safe("deps", () => failures += DepsCheck.Run(dir, outDir, Log), ref failures);
         }
+        if (cmd is "all" or "dpi")
+            Safe("dpi", () => failures += DpiShots.Run(args[1], Path.Combine(outDir, "ui"), Log), ref failures);
         if (cmd is "all" or "ui")
         {
             string exe = args[2];

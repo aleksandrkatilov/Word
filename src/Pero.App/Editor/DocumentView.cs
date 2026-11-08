@@ -80,6 +80,7 @@ public sealed partial class DocumentView : FrameworkElement, IScrollInfo
         Layout = DocumentLayout.Build(editor.Doc, _measurer);
         Hook(editor);
         InputMethod.SetIsInputMethodEnabled(this, true);
+        FocusVisualStyle = null; // курсор и выделение сами показывают фокус
         KeyboardNavigation.SetTabNavigation(this, KeyboardNavigationMode.None);
         KeyboardNavigation.SetDirectionalNavigation(this, KeyboardNavigationMode.None);
         _caretTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(530), DispatcherPriority.Background, (_, _) => { _caretOn = !_caretOn; InvalidateVisual(); }, Dispatcher);
