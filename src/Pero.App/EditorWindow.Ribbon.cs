@@ -33,6 +33,11 @@ public partial class EditorWindow
         Step("backstage", BuildBackstage);
         Step("layout-tab", AddLayoutTab);
         Step("view-tab", AddViewItems);
+        Step("home-paste", () =>
+        {
+            var clipboard = FindTab("PART_HomeTab")?.Items.OfType<RibbonBar>().FirstOrDefault() ?? throw new InvalidOperationException("нет группы «Буфер обмена»");
+            clipboard.Items.Add(RButton(Strings.PasteText, PasteAsText, icon: Icons.Paste));
+        });
         Step("automation", NameRibbonForAutomation);
 
         static void Step(string name, Action a)
@@ -53,9 +58,9 @@ public partial class EditorWindow
     private RibbonTab? FindTab(string partName) =>
         _ribbon?.Items.OfType<RibbonTab>().FirstOrDefault(t => t.Name == partName);
 
-    private static RibbonButton RButton(string label, Action action, bool large = false)
+    private static RibbonButton RButton(string label, Action action, bool large = false, char icon = Icons.Page, bool rotate = false)
     {
-        var b = new RibbonButton { Label = label, SizeForm = large ? SizeForm.Large : SizeForm.Small };
+        var b = new RibbonButton { Label = label, SizeForm = large ? SizeForm.Large : SizeForm.Small, SmallIcon = Icons.Glyph(icon, 16, rotate), LargeIcon = Icons.Glyph(icon, 32, rotate) };
         System.Windows.Automation.AutomationProperties.SetName(b, label);
         b.Click += (_, _) => action();
         return b;
@@ -259,7 +264,7 @@ public partial class EditorWindow
 
         var orient = new RibbonBar { Header = Strings.Orientation };
         orient.Items.Add(RButton(Strings.Portrait, () => Layout(() => PageSetup.SetOrientation(Editor, landscape: false))));
-        orient.Items.Add(RButton(Strings.Landscape, () => Layout(() => PageSetup.SetOrientation(Editor, landscape: true))));
+        orient.Items.Add(RButton(Strings.Landscape, () => Layout(() => PageSetup.SetOrientation(Editor, landscape: true)), rotate: true));
         tab.Items.Add(orient);
 
         var size = new RibbonBar { Header = Strings.PaperSize };
@@ -269,9 +274,9 @@ public partial class EditorWindow
         tab.Items.Add(size);
 
         var para = new RibbonBar { Header = Strings.ParagraphGroup };
-        var paraButton = new RibbonButton { Label = Strings.ParagraphSettings, SizeForm = SizeForm.Small, Command = SfRichTextBoxAdv.ShowParagraphDialogCommand, CommandTarget = Editor };
+        var paraButton = new RibbonButton { Label = Strings.ParagraphSettings, SizeForm = SizeForm.Small, SmallIcon = Icons.Glyph(Icons.AlignLeft), Command = SfRichTextBoxAdv.ShowParagraphDialogCommand, CommandTarget = Editor };
         para.Items.Add(paraButton);
-        para.Items.Add(RButton(Strings.PageBreak, () => Layout(() => Editor.Selection.InsertBreak(BreakType.PageBreak))));
+        para.Items.Add(RButton(Strings.PageBreak, () => Layout(() => Editor.Selection.InsertBreak(BreakType.PageBreak)), icon: Icons.PageBreak));
         tab.Items.Add(para);
 
         // Лента отображает только добавление в конец, поэтому «Макет» добавляется последним,
@@ -310,7 +315,7 @@ public partial class EditorWindow
     {
         var view = FindTab("PART_ViewTab") ?? throw new InvalidOperationException("нет вкладки «Вид»");
         var show = new RibbonBar { Header = Strings.ShowGroup };
-        _navToggle = RButton(Strings.NavPane, () => SetNavPane(NavPane.Visibility != Visibility.Visible));
+        _navToggle = RButton(Strings.NavPane, () => SetNavPane(NavPane.Visibility != Visibility.Visible), icon: Icons.Search);
         show.Items.Add(_navToggle);
         view.Items.Add(show);
     }

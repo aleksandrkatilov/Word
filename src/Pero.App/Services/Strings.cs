@@ -18,6 +18,7 @@ public static class Strings
     public static string UnsavedEditsNote => T("В документе есть несохранённые правки — различия могут быть ожидаемыми.", "The document has unsaved edits, so some differences may be expected.");
 
     // Файл (backstage)
+    public static string PasteText => T("Вставить только текст", "Paste text only");
     public static string FileTab => T("Файл", "File");
     public static string BsInfo => T("Сведения", "Info");
     public static string BsNew => T("Создать", "New");

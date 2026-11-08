@@ -77,6 +77,7 @@ public partial class EditorWindow : RibbonWindow
         AddShortcut(Key.S, ModifierKeys.Control | ModifierKeys.Shift, () => _ = SaveAsync(saveAs: true));
         AddShortcut(Key.F12, ModifierKeys.None, () => _ = SaveAsync(saveAs: true));
         AddShortcut(Key.P, ModifierKeys.Control, Print);
+        AddShortcut(Key.V, ModifierKeys.Control | ModifierKeys.Shift, PasteAsText);
         InitNavigation();
         ApplySpellCheck();
 
@@ -477,6 +478,11 @@ public partial class EditorWindow : RibbonWindow
     private void OnPreviewExecuted(object sender, ExecutedRoutedEventArgs e)
     {
         var cmd = e.Command;
+        if (cmd == SfRichTextBoxAdv.PasteCommand || cmd == ApplicationCommands.Paste)
+        {
+            SanitizeClipboardHtml(); // EDIT-03: движок вставит уже очищенный HTML
+            return;
+        }
         if (cmd == SfRichTextBoxAdv.NewDocumentCommand || cmd == ApplicationCommands.New)
         {
             e.Handled = true; NewDocument();
@@ -500,6 +506,36 @@ public partial class EditorWindow : RibbonWindow
                 // SCOPE-01: HTML, XAML и DOC не входят в P0 — команда не выполняет скрытое действие.
                 MessageBox.Show(this, Strings.FormatNotInP0, Strings.AppName, MessageBoxButton.OK, MessageBoxImage.Information);
         }
+    }
+
+    /// <summary>Заменить HTML в буфере обмена очищенной копией (скрипты, обработчики, внешние ресурсы удаляются).</summary>
+    private static void SanitizeClipboardHtml()
+    {
+        try
+        {
+            var data = Clipboard.GetDataObject();
+            if (data?.GetDataPresent(DataFormats.Html) != true || data.GetData(DataFormats.Html) is not string html) return;
+            string clean = Pero.Core.Security.HtmlClipboardSanitizer.ToCfHtml(Pero.Core.Security.HtmlClipboardSanitizer.Sanitize(html));
+            var obj = new DataObject();
+            obj.SetData(DataFormats.Html, clean);
+            foreach (var fmt in new[] { DataFormats.UnicodeText, DataFormats.Text, DataFormats.Rtf })
+                if (data.GetDataPresent(fmt) && data.GetData(fmt) is { } v) obj.SetData(fmt, v);
+            Clipboard.SetDataObject(obj, copy: true);
+        }
+        catch (Exception ex) { Log.Error("paste-sanitize", ex); }
+    }
+
+    /// <summary>EDIT-03: «Вставить только текст» — без оформления источника.</summary>
+    private void PasteAsText()
+    {
+        if (Editor.IsReadOnly) return;
+        try
+        {
+            if (!Clipboard.ContainsText()) return;
+            string text = Clipboard.GetText().Replace("\r\n", "\n");
+            Editor.Selection.InsertText(text);
+        }
+        catch (Exception ex) { Log.Error("paste-text", ex); }
     }
 
     private void AddShortcut(Key key, ModifierKeys mods, Action action)

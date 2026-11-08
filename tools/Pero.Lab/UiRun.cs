@@ -280,6 +280,8 @@ public sealed class UiRun(string exe, string samples, string outDir, Action<stri
         Thread.Sleep(300);
         for (int i = 0; i < steps; i++) { Keyboard.Press(VirtualKeyShort.RIGHT); Thread.Sleep(250); }
         if (WaitFor(w, expectButton, 2000)) { log("ribbon tab selected by keyboard"); return; }
+        File.WriteAllLines(Path.Combine(outDir, "uia-tree-after-keys.txt"),
+            w.FindAllDescendants().Select(e => $"{e.ControlType} | {e.Name} | {e.AutomationId} | {e.ClassName} | {e.BoundingRectangle}"));
         Keyboard.Press(VirtualKeyShort.ESCAPE);
         // ширина заголовка вкладки ≈ 72 px в теме Windows11Light
         Mouse.Click(new System.Drawing.Point(r.Left + r.Width / 2 + 72 * steps, r.Top + 12));
