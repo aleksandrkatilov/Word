@@ -1,0 +1,50 @@
+name: build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Restore
+        run: dotnet restore Pero.sln
+
+      - name: Build
+        run: dotnet build Pero.sln -c Release --no-restore
+
+      - name: Core tests
+        run: dotnet run --project tests/Pero.Core.Tests -c Release --no-build
+
+      - name: Reference documents
+        run: |
+          pip install python-docx pillow
+          python samples/make_samples.py samples/docx
+
+      - name: Inspect reference documents
+        shell: pwsh
+        run: |
+          dotnet run --project tools/Pero.Probe -c Release --no-build -- inspect samples/docx
+          # 3 = есть отклонённые файлы (ожидаемо для 9x-*.docx)
+          if ($LASTEXITCODE -gt 3) { exit $LASTEXITCODE }
+          exit 0
+
+      - name: Publish app (win-x64, self-contained)
+        run: dotnet publish src/Pero.App -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -o artifacts/Pero
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Pero-win-x64
+          path: artifacts/Pero
