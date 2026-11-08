@@ -87,9 +87,9 @@ public static class Strings
     public static string LinkConfirm => T("Открыть ссылку?\n\n{0}", "Open this link?\n\n{0}");
 
     public static string AppName => T("Перо", "Pero");
-    public static string Untitled => T("Документ{0}", "Document{0}");
+    public static string Untitled => T("Новый документ{0}", "New document{0}");
     public static string StateSaved => T("Сохранено", "Saved");
-    public static string StateUnsaved => T("Не сохранено", "Not saved");
+    public static string StateUnsaved => T("Есть изменения", "Unsaved changes");
     public static string StateSaving => T("Сохранение…", "Saving…");
     public static string StateReadOnly => T("Только чтение", "Read-only");
     public static string StateRecovered => T("Восстановлено", "Recovered");

@@ -187,8 +187,7 @@ public sealed partial class DocEditor
     }
 
     /// <summary>Байты изображения по связи; owner — часть, где стоит изображение (null — основная).</summary>
-    public byte[]? ImageBytes(string relId, string? owner = null) =>
-        Doc.Package.ResolvePartPath(relId, owner) is { } part && Doc.Package.Parts.TryGetValue(part, out var b) ? b : null;
+    public byte[]? ImageBytes(string relId, string? owner = null) => Doc.ImageBytes(relId, owner);
 
     // ── таблицы ──────────────────────────────────────────────────────────────
 

@@ -2,7 +2,7 @@ using System.Windows.Input;
 
 namespace Pero.Services;
 
-/// <summary>Команда-обёртка для кнопок ленты: RibbonButton движка надёжно выполняет Command, а не событие Click.</summary>
+/// <summary>Команда-обёртка для кнопок панели и пунктов меню.</summary>
 public sealed class ActionCommand(string name, Action action) : ICommand
 {
     public event EventHandler? CanExecuteChanged { add { } remove { } }

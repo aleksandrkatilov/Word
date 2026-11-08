@@ -1,29 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <!-- Лаборатория для CI на Windows: разведка API движка, круговой обмен на SfRichTextBoxAdv,
-       замеры производительности, UI-прогоны готового Pero.exe со скриншотами. -->
+  <!-- Лаборатория для CI на Windows: проверки собственного ядра на эталонах и корпусе (AC-02, AC-06),
+       проверка зависимостей (AC-07), UI-прогоны готового Pero.exe со скриншотами (AC-01, AC-03…AC-05). -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
-    <UseWindowsForms>false</UseWindowsForms>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>pero-lab</AssemblyName>
-    <SyncfusionVersion>35.1.43</SyncfusionVersion>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Syncfusion.SfRichTextRibbon.WPF" Version="$(SyncfusionVersion)" />
-    <PackageReference Include="Syncfusion.Licensing" Version="$(SyncfusionVersion)" />
+    <!-- FlaUI — MIT, только для автоматических UI-проверок, в приложение не входит. -->
     <PackageReference Include="FlaUI.UIA3" Version="4.0.0" />
-    <PackageReference Include="Syncfusion.SfSkinManager.WPF" Version="$(SyncfusionVersion)" />
-    <PackageReference Include="Syncfusion.Themes.Windows11Light.WPF" Version="$(SyncfusionVersion)" />
-  </ItemGroup>
-  <ItemGroup>
-    <!-- Тот же код параметров страницы, что в приложении, — проверяется напрямую на движке. -->
-    <Compile Include="..\..\src\Pero.App\Services\PageSetup.cs" Link="App\PageSetup.cs" />
-    <Compile Include="..\..\src\Pero.App\Services\Log.cs" Link="App\Log.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Pero.Core\Pero.Core.csproj" />
+    <ProjectReference Include="..\..\src\Pero.Doc\Pero.Doc.csproj" />
   </ItemGroup>
 </Project>

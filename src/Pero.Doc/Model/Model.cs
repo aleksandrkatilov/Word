@@ -27,6 +27,24 @@ public sealed class Document
         return d;
     }
 
+    /// <summary>Байты изображения по связи; owner — часть, где стоит изображение (null — основная).</summary>
+    public byte[]? ImageBytes(string relId, string? owner = null) =>
+        Package.ResolvePartPath(relId, owner) is { } part && Package.Parts.TryGetValue(part, out var b) ? b : null;
+
+    /// <summary>Шрифты, которые явно указаны в документе (стили, текст, тема).</summary>
+    public IEnumerable<string> UsedFonts()
+    {
+        var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (Styles.MinorFont is { Length: > 0 } mi) set.Add(mi);
+        if (Styles.MajorFont is { Length: > 0 } ma) set.Add(ma);
+        if (Styles.DefaultRun.Font is { } df) set.Add(df);
+        foreach (var s in Styles.ById.Values) if (s.Run.Font is { } f) set.Add(f);
+        foreach (var p in AllParagraphs())
+            foreach (var i in p.Inlines)
+                if (i is Run { Props.Font: { } rf }) set.Add(rf);
+        return set;
+    }
+
     /// <summary>
     /// Снимок для сохранения в фоне: копия содержимого и пакета, независимая от дальнейших правок.
     /// </summary>

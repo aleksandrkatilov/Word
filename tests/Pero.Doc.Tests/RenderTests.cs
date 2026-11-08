@@ -53,6 +53,8 @@ internal static class RenderTests
             string path = Path.Combine(Path.GetTempPath(), "pero-new.pdf");
             PdfExport.Write(lr, Drawer(ed), cat, path, "Проверка");
             Assert(new FileInfo(path).Length > 1000, "PDF пустой");
+            Assert(File.ReadAllBytes(path).Take(5).SequenceEqual("%PDF-"u8.ToArray()), "не PDF");
+            if (!HasPoppler) return;
             string text = PdfText(path);
             Assert(text.Contains("Отчёт о проверке") && text.Contains("полужирным") && text.Contains("ячейка") && text.Contains("Страница 1"), "в PDF нет текста: " + text);
         });
@@ -72,6 +74,7 @@ internal static class RenderTests
                 var ed = new DocEditor(doc);
                 PdfExport.Write(lr, Drawer(ed), cat, path, name);
                 Console.WriteLine($"      {name}: {lr.Pages.Count} стр., разметка {layoutMs} мс, PDF {new FileInfo(path).Length / 1024} КБ");
+                if (!HasPoppler) return;
                 string info = Run("pdfinfo", path);
                 Assert(System.Text.RegularExpressions.Regex.IsMatch(info, $@"Pages:\s+{lr.Pages.Count}\b"), "pdfinfo: " + info);
                 string text = PdfText(path).Replace("\n", " ").Replace("  ", " ");
@@ -86,7 +89,15 @@ internal static class RenderTests
 
     internal static PageDrawer Drawer(DocEditor ed) => new(FontCatalog.Shared, (img, story) => ed.ImageBytes(img.RelId, story?.PartPath));
 
-    private static string PdfText(string path) => Run("pdftotext", $"-layout \"{path}\" -");
+    /// <summary>Есть ли poppler (pdftotext/pdfinfo): на Linux-стенде есть, на Windows-стенде CI — нет.</summary>
+    private static readonly bool HasPoppler = Probe();
+
+    private static bool Probe()
+    {
+        try { Run("pdfinfo", "-v"); return true; } catch { return false; }
+    }
+
+    private static string PdfText(string path) => HasPoppler ? Run("pdftotext", $"-layout \"{path}\" -") : "";
 
     private static string Run(string exe, string args)
     {
