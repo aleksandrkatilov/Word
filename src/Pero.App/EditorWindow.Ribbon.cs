@@ -62,7 +62,7 @@ public partial class EditorWindow
     {
         var b = new RibbonButton { Label = label, SizeForm = large ? SizeForm.Large : SizeForm.Small, SmallIcon = Icons.Glyph(icon, 16, rotate), LargeIcon = Icons.Glyph(icon, 32, rotate) };
         System.Windows.Automation.AutomationProperties.SetName(b, label);
-        b.Click += (_, _) => action();
+        b.Command = new ActionCommand(label, action);
         return b;
     }
 
@@ -89,7 +89,7 @@ public partial class EditorWindow
     {
         var b = new BackStageCommandButton { Header = header };
         System.Windows.Automation.AutomationProperties.SetName(b, header);
-        b.Click += (_, _) => { CloseBackstage(); action(); };
+        b.Command = new ActionCommand(header, () => { CloseBackstage(); action(); });
         return b;
     }
 
