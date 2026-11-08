@@ -9,6 +9,7 @@ using Pero.Core.Packaging;
 using Pero.Doc.Docx;
 using Pero.Doc.Editing;
 using Pero.Doc.Model;
+using Orientation = System.Windows.Controls.Orientation;
 using Pero.Services;
 using Pero.Ui;
 

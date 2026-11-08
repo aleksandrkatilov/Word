@@ -14,6 +14,7 @@ using Pero.Doc.Docx;
 using Pero.Doc.Editing;
 using Pero.Doc.Fonts;
 using Pero.Doc.Model;
+using Orientation = System.Windows.Controls.Orientation;
 using Pero.Editor;
 using Pero.Services;
 using Pero.Ui;

@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using Pero.Doc.Model;
+using Orientation = System.Windows.Controls.Orientation;
 
 namespace Pero.Ui;
 

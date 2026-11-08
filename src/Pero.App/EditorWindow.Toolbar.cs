@@ -8,6 +8,8 @@ using System.Windows.Media;
 using System.Windows.Shapes;
 using Pero.Doc.Editing;
 using Pero.Doc.Model;
+using Orientation = System.Windows.Controls.Orientation;
+using Pero.Services;
 using Pero.Ui;
 
 namespace Pero;

@@ -5,6 +5,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using Pero.Doc.Editing;
 using Pero.Doc.Model;
+using Orientation = System.Windows.Controls.Orientation;
 using Pero.Services;
 using Pero.Ui;
 
