@@ -113,8 +113,8 @@ public sealed partial class EditorWindow
         C("Копировать форматирование", null, TogglePainter, edits: true);
         foreach (var (title, id) in StyleList) C("Стиль: " + title, null, () => Ed.ApplyStyle(id), edits: true);
         C("Параметры страницы…", null, ShowPageSetup, edits: true);
-        C("Книжная ориентация", null, () => Ed.SetOrientation(Orientation.Portrait), edits: true);
-        C("Альбомная ориентация", null, () => Ed.SetOrientation(Orientation.Landscape), edits: true);
+        C("Книжная ориентация", null, () => Ed.SetOrientation(Doc.Model.Orientation.Portrait), edits: true);
+        C("Альбомная ориентация", null, () => Ed.SetOrientation(Doc.Model.Orientation.Landscape), edits: true);
         // Таблица
         C("Вставить строку выше", null, () => Ed.InsertRow(below: false), edits: true);
         C("Вставить строку ниже", null, () => Ed.InsertRow(below: true), edits: true);
@@ -477,8 +477,8 @@ public sealed partial class EditorWindow
         {
             var s = Ed.Doc.Section;
             s.Orientation = o;
-            s.PageWidth = o == Orientation.Landscape ? ph : pw;
-            s.PageHeight = o == Orientation.Landscape ? pw : ph;
+            s.PageWidth = o == Doc.Model.Orientation.Landscape ? ph : pw;
+            s.PageHeight = o == Doc.Model.Orientation.Landscape ? pw : ph;
             s.MarginTop = top; s.MarginBottom = bottom; s.MarginLeft = left; s.MarginRight = right;
             return Ed.Selection;
         });

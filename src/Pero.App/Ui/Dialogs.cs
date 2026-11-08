@@ -126,7 +126,7 @@ public sealed class PageSetupDialog : FormDialog
     private readonly ComboBox _orient = new() { Height = 26 };
     private readonly TextBox _top, _bottom, _left, _right;
     public (int W, int H) PaperPortrait { get; private set; }
-    public Orientation Orientation => _orient.SelectedIndex == 1 ? Orientation.Landscape : Orientation.Portrait;
+    public Pero.Doc.Model.Orientation Orientation => _orient.SelectedIndex == 1 ? Pero.Doc.Model.Orientation.Landscape : Pero.Doc.Model.Orientation.Portrait;
     public int Top => Tw(_top.Text);
     public int Bottom => Tw(_bottom.Text);
     public int Left => Tw(_left.Text);
@@ -145,7 +145,7 @@ public sealed class PageSetupDialog : FormDialog
         _size.SelectedIndex = letter ? 1 : a4 ? 0 : 2;
         _orient.Items.Add("Книжная");
         _orient.Items.Add("Альбомная");
-        _orient.SelectedIndex = s.Orientation == Orientation.Landscape ? 1 : 0;
+        _orient.SelectedIndex = s.Orientation == Pero.Doc.Model.Orientation.Landscape ? 1 : 0;
         AddRow("Размер бумаги:", _size);
         AddRow("Ориентация:", _orient);
         _top = AddRow("Верхнее поле, см:", Box(Num(s.MarginTop / TwPerCm), 80));
@@ -160,7 +160,7 @@ public sealed class PageSetupDialog : FormDialog
     {
         foreach (var b in new[] { _top, _bottom, _left, _right })
             if (!TryNum(b.Text, out double v) || v < 0 || v > 20) return "Поля — числа от 0 до 20 см.";
-        var (pw, ph) = Orientation == Orientation.Landscape ? (PaperPortrait.H, PaperPortrait.W) : PaperPortrait;
+        var (pw, ph) = Orientation == Pero.Doc.Model.Orientation.Landscape ? (PaperPortrait.H, PaperPortrait.W) : PaperPortrait;
         if (Left + Right > pw - 1440 || Top + Bottom > ph - 1440) return "Поля не помещаются на странице.";
         return null;
     }
