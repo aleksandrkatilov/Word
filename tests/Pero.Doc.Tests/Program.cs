@@ -5,4 +5,5 @@ Console.OutputEncoding = Encoding.UTF8;
 RoundTripTests.Register(args.FirstOrDefault());
 EditTests.Register(args.FirstOrDefault());
 LayoutTests.Register(args.FirstOrDefault());
+RenderTests.Register(args.FirstOrDefault());
 return T.Run();
