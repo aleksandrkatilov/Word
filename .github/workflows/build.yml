@@ -85,6 +85,17 @@ jobs:
           PERO_SYNCFUSION_KEY: ${{ secrets.SYNCFUSION_LICENSE_KEY }}
         run: dotnet run --project tools/Pero.Lab -c Release -- all samples/docx artifacts/Pero/Pero.exe ci-out
 
+      - name: Lab — поиск зависания (варианты окна)
+        continue-on-error: true
+        timeout-minutes: 6
+        shell: pwsh
+        env:
+          PERO_SYNCFUSION_KEY: ${{ secrets.SYNCFUSION_LICENSE_KEY }}
+        run: |
+          foreach ($v in @("plain","ribbon","theme","ribbon-theme","ribbon-theme-direct")) {
+            dotnet run --project tools/Pero.Lab -c Release --no-build -- hang samples/docx $v ci-out
+          }
+
       - name: Results → ветка ci-results
         if: always()
         shell: bash

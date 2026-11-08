@@ -15,6 +15,8 @@
     <PackageReference Include="Syncfusion.SfRichTextRibbon.WPF" Version="$(SyncfusionVersion)" />
     <PackageReference Include="Syncfusion.Licensing" Version="$(SyncfusionVersion)" />
     <PackageReference Include="FlaUI.UIA3" Version="4.0.0" />
+    <PackageReference Include="Syncfusion.SfSkinManager.WPF" Version="$(SyncfusionVersion)" />
+    <PackageReference Include="Syncfusion.Themes.Windows11Light.WPF" Version="$(SyncfusionVersion)" />
   </ItemGroup>
   <ItemGroup>
     <!-- Тот же код параметров страницы, что в приложении, — проверяется напрямую на движке. -->

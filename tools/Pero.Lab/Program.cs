@@ -49,7 +49,7 @@ public static class Program
     public static int Main(string[] args)
     {
         Console.OutputEncoding = Encoding.UTF8;
-        if (args.Length < 2) { Console.WriteLine("pero-lab all|api|ribbon|engine|ui <samples> <exe> <out>"); return 64; }
+        if (args.Length < 2) { Console.WriteLine("pero-lab all|api|ribbon|engine|ui <samples> <exe> <out> | hang <samples> <variant> <out>"); return 64; }
         string cmd = args[0];
         string outDir = args[^1];
         Directory.CreateDirectory(outDir);
@@ -64,6 +64,21 @@ public static class Program
         int failures = 0;
         if (cmd is "all" or "api")
             Safe("api", () => ApiDump.Run(Path.Combine(outDir, "api")), ref failures);
+
+        if (cmd == "hang")
+        {
+            using var killer = new DialogKiller(Environment.ProcessId, Log);
+            var app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
+            app.Dispatcher.InvokeAsync(async () =>
+            {
+                try { await HangProbe.Run(args[2], args[1], Log); }
+                catch (Exception ex) { Log("hang probe FAILED: " + ex.Message); }
+                finally { app.Shutdown(); }
+            });
+            app.Run();
+            _log.Dispose();
+            return 0;
+        }
 
         if (cmd is "all" or "ribbon" or "engine")
         {
