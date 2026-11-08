@@ -9,7 +9,7 @@ import zipfile
 from pathlib import Path
 
 from docx import Document
-from docx.enum.section import WD_ORIENT
+from docx.enum.section import WD_ORIENT, WD_SECTION
 from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_BREAK
 from docx.oxml import OxmlElement, parse_xml
@@ -211,6 +211,72 @@ with zipfile.ZipFile(buf) as zin, zipfile.ZipFile(path4, "w", zipfile.ZIP_DEFLAT
         '<?xml version="1.0" encoding="UTF-8"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/custom-properties" '
         'xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">'
         '<property fmtid="{D5CDD505-2E9C-101B-9397-08002B2CF9AE}" pid="2" name="Отдел"><vt:lpwstr>Продажи</vt:lpwstr></property></Properties>')
+
+# P1. Примечания
+doc = Document()
+doc.add_heading("Примечания", level=1)
+p = doc.add_paragraph()
+r = p.add_run("Фрагмент с примечанием рецензента.")
+doc.add_comment(r, text="Проверить цифры", author="Рецензент", initials="Р")
+doc.add_paragraph(LOREM)
+doc.save(OUT / "05-comments.docx")
+
+# P1. Разделы: книжный и альбомный с разными колонтитулами
+doc = Document()
+doc.add_heading("Раздел 1 — книжная", level=1)
+doc.add_paragraph(LOREM * 3)
+doc.sections[0].header.paragraphs[0].text = "Колонтитул раздела 1"
+sec = doc.add_section(WD_SECTION.NEW_PAGE)
+sec.orientation = WD_ORIENT.LANDSCAPE
+sec.page_width, sec.page_height = sec.page_height, sec.page_width
+sec.header.is_linked_to_previous = False
+sec.header.paragraphs[0].text = "Колонтитул раздела 2"
+doc.add_heading("Раздел 2 — альбомная", level=1)
+doc.add_paragraph(LOREM * 3)
+doc.save(OUT / "06-sections.docx")
+
+# P1. Плавающее изображение с обтеканием (wp:anchor)
+doc = Document()
+doc.add_heading("Плавающее изображение", level=1)
+p = doc.add_paragraph()
+p.add_run().add_picture(png("#7030A0", "float"), width=Cm(5))
+inline = p._p.xpath(".//wp:inline")[0]
+extent = inline.find(qn("wp:extent"))
+cx, cy = extent.get("cx"), extent.get("cy")
+docpr = inline.find(qn("wp:docPr"))
+graphic = inline.find(qn("a:graphic"))
+from lxml import etree
+anchor = parse_xml(
+    f'<wp:anchor {nsdecls("wp")} distT="0" distB="0" distL="114300" distR="114300" simplePos="0" relativeHeight="251659264" '
+    f'behindDoc="0" locked="0" layoutInCell="1" allowOverlap="1">'
+    f'<wp:simplePos x="0" y="0"/><wp:positionH relativeFrom="column"><wp:posOffset>3200400</wp:posOffset></wp:positionH>'
+    f'<wp:positionV relativeFrom="paragraph"><wp:posOffset>0</wp:posOffset></wp:positionV>'
+    f'<wp:extent cx="{cx}" cy="{cy}"/><wp:effectExtent l="0" t="0" r="0" b="0"/><wp:wrapSquare wrapText="bothSides"/>'
+    f'<wp:docPr id="{docpr.get("id")}" name="{docpr.get("name")}"/><wp:cNvGraphicFramePr/></wp:anchor>')
+anchor.append(graphic)
+inline.getparent().replace(inline, anchor)
+doc.add_paragraph(LOREM * 5)
+doc.save(OUT / "07-floating-image.docx")
+
+# P1. Оглавление (поле TOC) и закладка с внутренней ссылкой
+doc = Document()
+p = doc.add_paragraph()
+for kind, text in (("begin", None), (None, 'TOC \\o "1-3" \\h \\z \\u'), ("separate", None)):
+    run = p.add_run()
+    if kind:
+        el = OxmlElement("w:fldChar"); el.set(qn("w:fldCharType"), kind); run._r.append(el)
+    else:
+        el = OxmlElement("w:instrText"); el.set(qn("xml:space"), "preserve"); el.text = text; run._r.append(el)
+p.add_run("Глава 1 ............ 1")
+end = p.add_run(); el = OxmlElement("w:fldChar"); el.set(qn("w:fldCharType"), "end"); end._r.append(el)
+h = doc.add_heading("Глава 1", level=1)
+h._p.insert(1, parse_xml(f'<w:bookmarkStart {nsdecls("w")} w:id="1" w:name="glava1"/>'))
+h._p.append(parse_xml(f'<w:bookmarkEnd {nsdecls("w")} w:id="1"/>'))
+doc.add_paragraph(LOREM)
+p = doc.add_paragraph("Ссылка на закладку: ")
+link = parse_xml(f'<w:hyperlink {nsdecls("w")} w:anchor="glava1"><w:r><w:t>к главе 1</w:t></w:r></w:hyperlink>')
+p._p.append(link)
+doc.save(OUT / "08-toc-bookmark.docx")
 
 # 5. Повреждённые и опасные файлы
 (OUT / "90-password-or-doc.docx").write_bytes(bytes([0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1]) + b"\0" * 504)

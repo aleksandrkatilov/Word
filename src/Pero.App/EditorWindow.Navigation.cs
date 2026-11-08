@@ -10,6 +10,7 @@ using Pero.Core.Security;
 using Pero.Services;
 using Syncfusion.Windows.Controls.RichTextBoxAdv;
 using MessageBox = System.Windows.MessageBox;
+using SelectionChangedEventArgs = System.Windows.Controls.SelectionChangedEventArgs;
 
 namespace Pero;
 

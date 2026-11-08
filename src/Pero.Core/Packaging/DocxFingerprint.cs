@@ -27,6 +27,9 @@ public sealed class DocxFingerprint
     public int Comments { get; private set; }
     public int TrackedChanges { get; private set; }
     public int Footnotes { get; private set; }
+    public int Bookmarks { get; private set; }
+    public int TocFields { get; private set; }
+    public int AnchorLinks { get; private set; }
     public int MediaParts { get; private set; }
     public SortedSet<string> UsedStyles { get; } = new(StringComparer.Ordinal);
     public SortedSet<string> Fonts { get; } = new(StringComparer.Ordinal);
@@ -88,6 +91,7 @@ public sealed class DocxFingerprint
         var w = instr?.Trim().Split(' ', 2)[0].ToUpperInvariant();
         if (w is "PAGE" or "NUMPAGES") PageFields++;
         else if (w == "HYPERLINK") Hyperlinks++; // движок пишет ссылки полем HYPERLINK — это та же гиперссылка
+        else if (w == "TOC") TocFields++;
     }
 
     private void ScanMain(ZipArchiveEntry e, DecompressionBudget budget)
@@ -130,7 +134,8 @@ public sealed class DocxFingerprint
                 case "tc": TableCells++; break;
                 case "gridSpan": MergedCells++; break;
                 case "vMerge": MergedCells++; break;
-                case "hyperlink": Hyperlinks++; break;
+                case "hyperlink": Hyperlinks++; if (r.GetAttribute("anchor", W) is not null) AnchorLinks++; break;
+                case "bookmarkStart": if (r.GetAttribute("name", W) is { } bn && !bn.StartsWith('_')) Bookmarks++; break;
                 case "numPr": NumberedParagraphs++; break;
                 case "br": if (r.GetAttribute("type", W) == "page") PageBreaks++; break;
                 case "sectPr": Sections++; break;
@@ -214,6 +219,8 @@ public sealed class DocxFingerprint
         Num("Примечания", Comments, after.Comments);
         Num("Исправления", TrackedChanges, after.TrackedChanges);
         Num("Сноски", Footnotes, after.Footnotes);
+        Num("Закладки", Bookmarks, after.Bookmarks);
+        Num("Поля оглавления", TocFields, after.TocFields);
         Num("Медиафайлы", MediaParts, after.MediaParts);
         Str("Размер страницы", PageSize, after.PageSize);
         Str("Поля страницы", PageMargins, after.PageMargins);

@@ -97,7 +97,7 @@ public partial class EditorWindow
     {
         var panel = new StackPanel { Margin = new Thickness(32) };
         panel.Children.Add(Heading(Strings.BsInfo));
-        _infoText = new TextBlock { TextWrapping = TextWrapping.Wrap, FontSize = 14, LineHeight = 22, Margin = new Thickness(0, 0, 0, 16) };
+        _infoText = new TextBlock { TextWrapping = System.Windows.TextWrapping.Wrap, FontSize = 14, LineHeight = 22, Margin = new Thickness(0, 0, 0, 16) };
         panel.Children.Add(_infoText);
         var buttons = new WrapPanel();
         buttons.Children.Add(PanelButton(Strings.CompatReport, () => { CloseBackstage(); ShowReport_Click(this, new RoutedEventArgs()); }));
