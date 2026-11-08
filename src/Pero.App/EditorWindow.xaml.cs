@@ -52,6 +52,8 @@ public partial class EditorWindow : RibbonWindow
 
     public EditorWindow()
     {
+        try { Syncfusion.SfSkinManager.SfSkinManager.SetTheme(this, new Syncfusion.SfSkinManager.Theme("Windows11Light")); }
+        catch (Exception ex) { Log.Error("theme", ex); }
         InitializeComponent();
         OpenWindows.Add(this);
         _displayName = string.Format(Strings.Untitled, ++_untitledCounter);
@@ -415,6 +417,7 @@ public partial class EditorWindow : RibbonWindow
     private async Task AutoRecoverAsync()
     {
         if (!_dirty || !_changedSinceRecovery || _saving) return;
+        Log.Info("AUTORECOVER tick");
         _changedSinceRecovery = false;
         string tmp = S.NewTempPath(".docx");
         try
@@ -533,6 +536,7 @@ public partial class EditorWindow : RibbonWindow
     private void OnContentChanged()
     {
         if (_suppressDirty) return;
+        if (!_dirty) Log.Info("DIRTY first change");
         _dirty = true;
         _changedSinceRecovery = true;
         _wordTimer.Stop();

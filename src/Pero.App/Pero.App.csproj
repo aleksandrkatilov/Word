@@ -21,6 +21,9 @@
     <PackageReference Include="Syncfusion.Licensing" Version="$(SyncfusionVersion)" />
     <!-- Экспорт PDF через DocIO. -->
     <PackageReference Include="Syncfusion.DocToPDFConverter.WPF" Version="$(SyncfusionVersion)" />
+    <!-- Светлая тема, близкая к Word из Microsoft 365 (визуальный ориентир ТЗ). -->
+    <PackageReference Include="Syncfusion.SfSkinManager.WPF" Version="$(SyncfusionVersion)" />
+    <PackageReference Include="Syncfusion.Themes.Windows11Light.WPF" Version="$(SyncfusionVersion)" />
   </ItemGroup>
 
   <ItemGroup>

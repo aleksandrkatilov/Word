@@ -33,12 +33,21 @@ public partial class EditorWindow
         Step("backstage", BuildBackstage);
         Step("layout-tab", AddLayoutTab);
         Step("view-tab", AddViewItems);
+        Step("automation", NameRibbonForAutomation);
 
         static void Step(string name, Action a)
         {
             try { a(); Log.Info($"ribbon: {name} OK"); }
             catch (Exception ex) { Log.Error("ribbon-" + name, ex); }
         }
+    }
+
+    /// <summary>Вкладки ленты и кнопка «Файл» получают имена для экранного диктора и UI-тестов.</summary>
+    private void NameRibbonForAutomation()
+    {
+        foreach (var tab in _ribbon!.Items.OfType<RibbonTab>())
+            if (tab.Caption is string caption) System.Windows.Automation.AutomationProperties.SetName(tab, caption);
+        if (_ribbon.BackStageButton is { } bsb) System.Windows.Automation.AutomationProperties.SetName(bsb, Strings.FileTab);
     }
 
     private RibbonTab? FindTab(string partName) =>

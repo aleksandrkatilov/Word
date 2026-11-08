@@ -99,7 +99,11 @@ public sealed class UiRun(string exe, string samples, string outDir, Action<stri
             WaitTitle(s.Window, "02-tables");
             Thread.Sleep(2000);
             ClickPage(s.Window);
+            Keyboard.TypeSimultaneously(VirtualKeyShort.CONTROL, VirtualKeyShort.HOME);
             Keyboard.Type("Несохранённая правка для восстановления. ");
+            Thread.Sleep(1000);
+            Shot("ui-recovery-typed");
+            Check(s.Window.Title.Contains("Не сохранено"), $"правка не отмечена: «{s.Window.Title}»");
             Thread.Sleep(40_000); // интервал автовосстановления 30 с
             s.App.Kill();
             s.Dispose();
@@ -279,7 +283,13 @@ public sealed class UiRun(string exe, string samples, string outDir, Action<stri
             el = w.FindFirstDescendant(cf => cf.ByName(name));
             if (el is null) Thread.Sleep(300);
         }
-        if (el is null) throw new Exception($"не найден элемент «{name}»");
+        if (el is null)
+        {
+            // для разбора: что видно через UI Automation
+            File.WriteAllLines(Path.Combine(outDir, $"uia-tree-{name}.txt"),
+                w.FindAllDescendants().Select(e => $"{e.ControlType} | {e.Name} | {e.AutomationId} | {e.ClassName}"));
+            throw new Exception($"не найден элемент «{name}»");
+        }
         var r = el.BoundingRectangle;
         if (r.Width > 0) Mouse.Click(new System.Drawing.Point(r.Left + r.Width / 2, r.Top + r.Height / 2));
         else el.Click();

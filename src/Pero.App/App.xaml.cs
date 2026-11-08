@@ -17,6 +17,8 @@ public partial class App : Application
         // До любого обращения к компонентам Syncfusion (SEC-01: без сетевых обращений).
         Syncfusion.Telemetry.Telemetry.Disable();
 
+        // Тема применяется ко всем элементам Syncfusion как стиль по умолчанию.
+        try { Syncfusion.SfSkinManager.SfSkinManager.ApplyThemeAsDefaultStyle = true; } catch { }
         var settings = AppSettings.Load();
         RegisterLicense(settings);
         ApplyLanguage(settings);
