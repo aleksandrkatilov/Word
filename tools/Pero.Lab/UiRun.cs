@@ -152,9 +152,12 @@ public sealed class UiRun(string exe, string samples, string outDir, Action<stri
             if (byName) ClickByName(s.Window, "Альбомная"); else Mouse.Click(new System.Drawing.Point(wr.Left + 330, wr.Top + 100));
             Thread.Sleep(2500);
             Shot("ui-layout-landscape");
-            if (byName) ClickByName(s.Window, "Узкие"); else Mouse.Click(new System.Drawing.Point(wr.Left + 57, wr.Top + 100));
+            wr = s.Window.BoundingRectangle;
+            if (byName) ClickByName(s.Window, "Узкие"); else Mouse.Click(new System.Drawing.Point(wr.Left + 55, wr.Top + 101));
             Thread.Sleep(1500);
+            Shot("ui-layout-narrow");
             var before = File.GetLastWriteTimeUtc(path);
+            ClickPage(s.Window); // фокус обратно в документ
             Keyboard.TypeSimultaneously(VirtualKeyShort.CONTROL, VirtualKeyShort.KEY_S);
             WaitUntil(() => File.GetLastWriteTimeUtc(path) > before && FileReady(path), TimeSpan.FromSeconds(30));
             Thread.Sleep(1500);

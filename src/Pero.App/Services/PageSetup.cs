@@ -45,33 +45,46 @@ public static class PageSetup
         bool landscape = page.Width > page.Height;
         double w = widthMm * PxPerMm, h = heightMm * PxPerMm;
         if (landscape != (w > h)) (w, h) = (h, w);
-        ApplyToDocument(editor, sf => sf.PageSize = new Size(w, h));
+        ApplyToDocument(editor, sf => sf.PageSize = new Size(w, h), sf => sf.PageSize = new Size(w, h));
     }
 
     public static void SetOrientation(SfRichTextBoxAdv editor, bool landscape)
     {
         var (page, margin) = Current(editor);
         if ((page.Width > page.Height) == landscape) return;
-        ApplyToDocument(editor, sf =>
-        {
-            sf.PageSize = new Size(page.Height, page.Width);
-            // поля поворачиваются вместе со страницей, как в Word
-            sf.PageMargin = new Thickness(margin.Bottom, margin.Left, margin.Top, margin.Right);
-        });
+        var rotated = new Thickness(margin.Bottom, margin.Left, margin.Top, margin.Right); // поля поворачиваются вместе со страницей, как в Word
+        ApplyToDocument(editor,
+            sf => { sf.PageSize = new Size(page.Height, page.Width); sf.PageMargin = rotated; },
+            sf => { sf.PageSize = new Size(page.Height, page.Width); sf.PageMargin = rotated; });
     }
 
-    public static void SetMargins(SfRichTextBoxAdv editor, double topMm, double rightMm, double bottomMm, double leftMm) =>
-        ApplyToDocument(editor, sf => sf.PageMargin = new Thickness(leftMm * PxPerMm, topMm * PxPerMm, rightMm * PxPerMm, bottomMm * PxPerMm));
+    public static void SetMargins(SfRichTextBoxAdv editor, double topMm, double rightMm, double bottomMm, double leftMm)
+    {
+        var m = new Thickness(leftMm * PxPerMm, topMm * PxPerMm, rightMm * PxPerMm, bottomMm * PxPerMm);
+        ApplyToDocument(editor, sf => sf.PageMargin = m, sf => sf.PageMargin = m);
+    }
 
     /// <summary>Выделить весь документ, изменить формат раздела через выделение, вернуть выделение.</summary>
-    private static void ApplyToDocument(SfRichTextBoxAdv editor, Action<SelectionSectionFormat> change)
+    private static void ApplyToDocument(SfRichTextBoxAdv editor, Action<SelectionSectionFormat> change, Action<SectionFormat>? direct = null)
     {
+        var before = Current(editor);
         var sel = editor.Selection;
-        var start = sel.Start;
-        var end = sel.End;
+        string startIndex = sel.Start.HierarchicalIndex, endIndex = sel.End.HierarchicalIndex;
         sel.Select(editor.Document.DocumentStart, editor.Document.DocumentEnd);
         try { change(sel.SectionFormat); }
-        finally { sel.Select(start, end); }
+        finally
+        {
+            try { sel.Select(editor.Document.GetTextPosition(startIndex), editor.Document.GetTextPosition(endIndex)); } catch { }
+        }
+        var after = Current(editor);
+        Log.Info($"PAGESETUP via selection: {before.Page}/{before.Margin} → {after.Page}/{after.Margin}");
+        if (after == before && direct is not null)
+        {
+            // Запасной путь: формат раздела напрямую в модели документа.
+            foreach (SectionAdv section in editor.Document.Sections) direct(section.SectionFormat);
+            after = Current(editor);
+            Log.Info($"PAGESETUP direct: → {after.Page}/{after.Margin}");
+        }
     }
 
     public static double ToMm(double px) => Math.Round(px / PxPerMm, 1);
