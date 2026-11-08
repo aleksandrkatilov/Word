@@ -143,8 +143,8 @@ public sealed class UiRun(string exe, string samples, string outDir, Action<stri
             var s = Start(path);
             WaitTitle(s.Window, "01-styles");
             Thread.Sleep(2500);
-            ClickByName(s.Window, "Макет");
-            Thread.Sleep(1200);
+            SelectRibbonTab(s.Window, steps: 2, expectButton: "Альбомная");
+            Thread.Sleep(800);
             Shot("ui-layout-tab");
             ClickByName(s.Window, "Альбомная");
             Thread.Sleep(2500);
@@ -266,6 +266,36 @@ public sealed class UiRun(string exe, string samples, string outDir, Action<stri
         foreach (var p in Process.GetProcessesByName(Path.GetFileNameWithoutExtension(exe)))
             try { p.Kill(); } catch { }
         Thread.Sleep(800);
+    }
+
+    /// <summary>
+    /// Движок отдаёт в UI Automation только выбранную вкладку ленты. Переход: щелчок по «Главная»
+    /// и стрелки вправо (проверка клавиатурной навигации), запасной путь — щелчок по строке вкладок.
+    /// </summary>
+    private void SelectRibbonTab(Window w, int steps, string expectButton)
+    {
+        var home = w.FindFirstDescendant(cf => cf.ByAutomationId("PART_HomeTab")) ?? throw new Exception("нет вкладки «Главная»");
+        var r = home.BoundingRectangle;
+        Mouse.Click(new System.Drawing.Point(r.Left + r.Width / 2, r.Top + 12));
+        Thread.Sleep(300);
+        for (int i = 0; i < steps; i++) { Keyboard.Press(VirtualKeyShort.RIGHT); Thread.Sleep(250); }
+        if (WaitFor(w, expectButton, 2000)) { log("ribbon tab selected by keyboard"); return; }
+        Keyboard.Press(VirtualKeyShort.ESCAPE);
+        // ширина заголовка вкладки ≈ 72 px в теме Windows11Light
+        Mouse.Click(new System.Drawing.Point(r.Left + r.Width / 2 + 72 * steps, r.Top + 12));
+        if (!WaitFor(w, expectButton, 3000)) throw new Exception($"не удалось открыть вкладку с «{expectButton}»");
+        log("ribbon tab selected by mouse");
+    }
+
+    private static bool WaitFor(Window w, string name, int ms)
+    {
+        var sw = Stopwatch.StartNew();
+        while (sw.ElapsedMilliseconds < ms)
+        {
+            if (w.FindFirstDescendant(cf => cf.ByName(name)) is not null) return true;
+            Thread.Sleep(200);
+        }
+        return false;
     }
 
     private static bool FileReady(string path)
