@@ -17,6 +17,7 @@ from docx.oxml.ns import nsdecls, qn
 from docx.shared import Cm, Pt, RGBColor
 from PIL import Image, ImageDraw
 
+sys.stdout.reconfigure(encoding="utf-8")  # консоль Windows по умолчанию не UTF-8
 OUT = Path(sys.argv[1] if len(sys.argv) > 1 else ".")
 OUT.mkdir(parents=True, exist_ok=True)
 
