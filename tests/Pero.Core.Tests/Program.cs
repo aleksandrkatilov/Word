@@ -283,6 +283,39 @@ Test("Реестр совместимости переопределяется �
     Assert(reg.ToJson().Contains("\"Equations\""), "JSON");
 });
 
+// ── Исправления вывода движка ──────────────────────────────────────────────
+Test("Вертикальное объединение: недостающие ячейки vMerge=continue восстанавливаются", () =>
+{
+    static string Tc(string t, string pr = "") => $"<w:tc><w:tcPr>{pr}</w:tcPr><w:p><w:r><w:t>{t}</w:t></w:r></w:p></w:tc>";
+    string grid = "<w:tblGrid><w:gridCol w:w=\"2000\"/><w:gridCol w:w=\"2000\"/><w:gridCol w:w=\"2000\"/><w:gridCol w:w=\"2000\"/></w:tblGrid>";
+    // так пишет движок 35.1: в строках 3–4 нет ячеек под объединением
+    string engine = $"<w:tbl>{grid}" +
+        $"<w:tr>{Tc("A", "<w:gridSpan w:val=\"2\"/>")}{Tc("C")}{Tc("D")}</w:tr>" +
+        $"<w:tr>{Tc("1")}{Tc("2")}{Tc("3")}{Tc("V", "<w:vMerge w:val=\"restart\"/>")}</w:tr>" +
+        $"<w:tr>{Tc("1")}{Tc("2")}{Tc("3")}</w:tr>" +
+        $"<w:tr>{Tc("1")}{Tc("2")}{Tc("3")}</w:tr></w:tbl><w:p/>";
+    var bytes = new MiniDocx { Body = engine }.Build();
+    using var fixedUp = new MemoryStream();
+    var rep = EngineFixups.Apply(new MemoryStream(bytes), fixedUp);
+    Assert(rep.MergeCellsRestored == 2, $"восстановлено {rep.MergeCellsRestored}");
+    fixedUp.Position = 0;
+    var fp = DocxFingerprint.FromStream(fixedUp);
+    Assert(fp.TableCells == 15 && fp.MergedCells == 4, $"ячеек {fp.TableCells}, объединений {fp.MergedCells}");
+
+    // корректная таблица не меняется
+    string ok = engine.Replace($"<w:tr>{Tc("1")}{Tc("2")}{Tc("3")}</w:tr>", $"<w:tr>{Tc("1")}{Tc("2")}{Tc("3")}{Tc("", "<w:vMerge/>")}</w:tr>");
+    using var o2 = new MemoryStream();
+    Assert(EngineFixups.Apply(new MemoryStream(new MiniDocx { Body = ok }.Build()), o2).MergeCellsRestored == 0, "лишние ячейки в корректной таблице");
+});
+
+Test("Гиперссылка полем HYPERLINK считается гиперссылкой", () =>
+{
+    var a = new MiniDocx { Body = "<w:p><w:hyperlink><w:r><w:t>x</w:t></w:r></w:hyperlink></w:p>" }.Build();
+    var b = new MiniDocx { Body = "<w:p><w:r><w:fldChar w:fldCharType=\"begin\"/></w:r><w:r><w:instrText>HYPERLINK \"https://e.com\"</w:instrText></w:r><w:r><w:fldChar w:fldCharType=\"separate\"/></w:r><w:r><w:t>x</w:t></w:r><w:r><w:fldChar w:fldCharType=\"end\"/></w:r></w:p>" }.Build();
+    var diffs = DocxFingerprint.FromStream(new MemoryStream(a)).CompareTo(DocxFingerprint.FromStream(new MemoryStream(b)));
+    Assert(!diffs.Any(d => d.Property == "Гиперссылки"), string.Join("; ", diffs.Select(d => d.Property)));
+});
+
 // ── Ссылки (LINK-01) ───────────────────────────────────────────────────────
 Test("Ссылки: веб и почта — с подтверждением, опасные схемы — блок", () =>
 {

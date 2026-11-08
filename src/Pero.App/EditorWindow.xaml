@@ -23,9 +23,8 @@
         <Border x:Name="MessageBar" Grid.Row="1" Visibility="Collapsed"
                 Background="#FFF4CE" BorderBrush="#E8DCA0" BorderThickness="0,0,0,1" Padding="12,6">
             <DockPanel LastChildFill="True">
-                <Button DockPanel.Dock="Right" Content="✕" Width="28" Margin="8,0,0,0"
-                        Background="Transparent" BorderThickness="0" Click="CloseMessageBar_Click"
-                        AutomationProperties.Name="Закрыть сообщение"/>
+                <Button x:Name="MessageBarClose" DockPanel.Dock="Right" Content="✕" Width="28" Margin="8,0,0,0"
+                        Background="Transparent" BorderThickness="0" Click="CloseMessageBar_Click"/>
                 <Button x:Name="MessageBarCopyButton" DockPanel.Dock="Right" Padding="10,2" Margin="8,0,0,0"
                         Click="SaveCopy_Click"/>
                 <Button x:Name="MessageBarDetailsButton" DockPanel.Dock="Right" Padding="10,2" Margin="8,0,0,0"
@@ -34,17 +33,47 @@
             </DockPanel>
         </Border>
 
-        <!-- Документный движок с настоящей постраничной разметкой (PAGE-01). -->
-        <syncfusion:SfRichTextBoxAdv x:Name="Editor" Grid.Row="2"
-                                     LayoutType="Pages"
-                                     Background="#E9E9E9"
-                                     AutomationProperties.Name="Документ"/>
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition x:Name="NavColumn" Width="0"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Область навигации (UI-07): заголовки и результаты поиска. -->
+            <Border x:Name="NavPane" Grid.Column="0" Visibility="Collapsed" Background="#FAFAFA"
+                    BorderBrush="#DADADA" BorderThickness="0,0,1,0">
+                <DockPanel Margin="10,8">
+                    <DockPanel DockPanel.Dock="Top">
+                        <Button x:Name="NavClose" DockPanel.Dock="Right" Content="✕" Width="24" Background="Transparent"
+                                BorderThickness="0" Click="NavClose_Click"/>
+                        <TextBlock x:Name="NavTitle" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    </DockPanel>
+                    <TextBox x:Name="NavSearch" DockPanel.Dock="Top" Margin="0,8,0,4" Padding="4,3"
+                             TextChanged="NavSearch_TextChanged" KeyDown="NavSearch_KeyDown"/>
+                    <TextBlock x:Name="NavStatus" DockPanel.Dock="Top" Foreground="#666" Margin="0,0,0,6" TextWrapping="Wrap"/>
+                    <Grid>
+                        <ListBox x:Name="NavHeadings" BorderThickness="0" Background="Transparent"
+                                 SelectionChanged="NavHeadings_SelectionChanged"/>
+                        <ListBox x:Name="NavResults" BorderThickness="0" Background="Transparent" Visibility="Collapsed"
+                                 SelectionChanged="NavResults_SelectionChanged"/>
+                    </Grid>
+                </DockPanel>
+            </Border>
+            <GridSplitter x:Name="NavSplitter" Grid.Column="1" Width="4" Visibility="Collapsed"
+                          HorizontalAlignment="Stretch" Background="Transparent"/>
+
+            <!-- Документный движок с настоящей постраничной разметкой (PAGE-01). -->
+            <syncfusion:SfRichTextBoxAdv x:Name="Editor" Grid.Column="2"
+                                         LayoutType="Pages"
+                                         Background="#E9E9E9"
+                                         UseCtrlClickToFollowHyperlink="True"/>
+        </Grid>
 
         <!-- Строка состояния (UI-06). -->
         <Border Grid.Row="3" Background="#F3F3F3" BorderBrush="#DADADA" BorderThickness="0,1,0,0" Padding="10,2">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
@@ -54,26 +83,14 @@
                 <TextBlock x:Name="PageStatus" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,18,0"/>
                 <TextBlock x:Name="WordStatus" Grid.Column="1" VerticalAlignment="Center" Margin="0,0,18,0"/>
                 <TextBlock x:Name="LanguageStatus" Grid.Column="2" VerticalAlignment="Center" Margin="0,0,18,0"/>
-                <Menu Grid.Column="3" Background="Transparent" VerticalAlignment="Center">
-                    <MenuItem x:Name="Stage0Menu" Padding="6,1">
-                        <MenuItem x:Name="MenuExportPdf" Click="ExportPdf_Click"/>
-                        <MenuItem x:Name="MenuExportTxt" Click="ExportTxt_Click"/>
-                        <Separator/>
-                        <MenuItem x:Name="MenuReport" Click="ShowReport_Click"/>
-                        <MenuItem x:Name="MenuRoundTrip" Click="RoundTrip_Click"/>
-                        <Separator/>
-                        <MenuItem x:Name="RecentMenu" SubmenuOpened="RecentMenu_SubmenuOpened"/>
-                    </MenuItem>
-                </Menu>
-                <StackPanel Grid.Column="5" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Content="−" Width="24" Background="Transparent" BorderThickness="0"
-                            Click="ZoomOut_Click" AutomationProperties.Name="Уменьшить масштаб"/>
+                <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button x:Name="ZoomOutButton" Content="−" Width="24" Background="Transparent" BorderThickness="0"
+                            Click="ZoomOut_Click"/>
                     <Slider x:Name="ZoomSlider" Width="120" Minimum="25" Maximum="500" VerticalAlignment="Center"
                             IsSnapToTickEnabled="False" SmallChange="10" LargeChange="10"
-                            Value="{Binding ZoomFactor, ElementName=Editor, Mode=TwoWay}"
-                            AutomationProperties.Name="Масштаб"/>
-                    <Button Content="+" Width="24" Background="Transparent" BorderThickness="0"
-                            Click="ZoomIn_Click" AutomationProperties.Name="Увеличить масштаб"/>
+                            Value="{Binding ZoomFactor, ElementName=Editor, Mode=TwoWay}"/>
+                    <Button x:Name="ZoomInButton" Content="+" Width="24" Background="Transparent" BorderThickness="0"
+                            Click="ZoomIn_Click"/>
                     <TextBlock Width="44" TextAlignment="Right" VerticalAlignment="Center"
                                Text="{Binding Value, ElementName=ZoomSlider, StringFormat={}{0:0}%}"/>
                 </StackPanel>

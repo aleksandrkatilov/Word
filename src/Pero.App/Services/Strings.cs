@@ -16,6 +16,75 @@ public static class Strings
     public static string Save => T("Сохранить", "Save");
     public static string FormatNotInP0 => T("Сохранение в этом формате не входит в первую версию. Доступны DOCX, TXT и PDF.", "This format is not part of the first release. DOCX, TXT and PDF are available.");
     public static string UnsavedEditsNote => T("В документе есть несохранённые правки — различия могут быть ожидаемыми.", "The document has unsaved edits, so some differences may be expected.");
+
+    // Файл (backstage)
+    public static string FileTab => T("Файл", "File");
+    public static string BsInfo => T("Сведения", "Info");
+    public static string BsNew => T("Создать", "New");
+    public static string BsOpen => T("Открыть", "Open");
+    public static string BsSaveAs => T("Сохранить как", "Save As");
+    public static string BsPrint => T("Печать", "Print");
+    public static string BsExport => T("Экспорт", "Export");
+    public static string BsOptions => T("Параметры", "Options");
+    public static string BsClose => T("Закрыть", "Close");
+    public static string InfoSize => T("Размер: {0:N0} КБ", "Size: {0:N0} KB");
+    public static string InfoCompat => T("Совместимость", "Compatibility");
+    public static string CompatOk => T("все конструкции поддерживаются", "all content is supported");
+    public static string CompatWarn => T("часть оформления поддерживается частично", "some formatting is partly supported");
+    public static string CompatReadOnly => T("только чтение — есть неподдерживаемое содержимое", "read-only — unsupported content");
+    public static string Browse => T("Обзор…", "Browse…");
+    public static string RemoveFromList => T("Удалить из списка", "Remove from list");
+    public static string RecentMissing => T("Файл не найден: {0}", "File not found: {0}");
+    public static string OptLanguage => T("Язык интерфейса", "Display language");
+    public static string OptRestart => T("Язык изменится после перезапуска «Пера».", "The language changes after restarting Pero.");
+    public static string OptAutoRecover => T("Автовосстановление, секунд (10–600)", "AutoRecover interval, seconds (10–600)");
+    public static string OptSpell => T("Проверять орфографию при вводе", "Check spelling as you type");
+
+    // Макет
+    public static string LayoutTab => T("Макет", "Layout");
+    public static string MarginsGroup => T("Поля", "Margins");
+    public static string MarginName(string key) => key switch
+    {
+        "Normal" => T("Обычные", "Normal"),
+        "Narrow" => T("Узкие", "Narrow"),
+        "Moderate" => T("Средние", "Moderate"),
+        "Wide" => T("Широкие", "Wide"),
+        _ => key,
+    };
+    public static string CustomMargins => T("Настраиваемые поля…", "Custom margins…");
+    public static string Orientation => T("Ориентация", "Orientation");
+    public static string Portrait => T("Книжная", "Portrait");
+    public static string Landscape => T("Альбомная", "Landscape");
+    public static string PaperSize => T("Размер", "Size");
+    public static string OtherSize => T("Другой размер…", "More paper sizes…");
+    public static string ParagraphGroup => T("Абзац", "Paragraph");
+    public static string ParagraphSettings => T("Отступы и интервалы…", "Indents and spacing…");
+    public static string PageBreak => T("Разрыв страницы", "Page break");
+    public static string ShowGroup => T("Показать", "Show");
+    public static string PageSetupTitle => T("Параметры страницы", "Page Setup");
+    public static string WidthCm => T("Ширина, см", "Width, cm");
+    public static string HeightCm => T("Высота, см", "Height, cm");
+    public static string MarginsCm => T("Поля, см", "Margins, cm");
+    public static string Top => T("Верхнее", "Top");
+    public static string Bottom => T("Нижнее", "Bottom");
+    public static string Left => T("Левое", "Left");
+    public static string Right => T("Правое", "Right");
+    public static string Ok => T("ОК", "OK");
+    public static string Cancel => T("Отмена", "Cancel");
+    public static string MarginsTooLarge => T("Поля не помещаются на странице.", "The margins do not fit on the page.");
+    public static string ValueOutOfRange => T("Введите число от {0} до {1}.", "Enter a number from {0} to {1}.");
+
+    // Навигация и ссылки
+    public static string NavPane => T("Область навигации", "Navigation pane");
+    public static string SearchDocument => T("Поиск в документе", "Search document");
+    public static string NavHeadings => T("Заголовки", "Headings");
+    public static string SearchResults => T("Результаты поиска", "Search results");
+    public static string NoHeadings => T("В документе нет заголовков. Примените стили «Заголовок 1–3».", "No headings. Apply Heading 1–3 styles.");
+    public static string NoResults => T("Ничего не найдено", "No results");
+    public static string ResultsCount => T("Найдено: {0}", "{0} results");
+    public static string LinkBlocked => T("Ссылка не открыта: {0}\n\nПричина: {1}.", "The link was not opened: {0}\n\nReason: {1}.");
+    public static string LinkConfirm => T("Открыть ссылку?\n\n{0}", "Open this link?\n\n{0}");
+
     public static string AppName => T("Перо", "Pero");
     public static string Untitled => T("Документ{0}", "Document{0}");
     public static string StateSaved => T("Сохранено", "Saved");

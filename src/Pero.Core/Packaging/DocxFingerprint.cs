@@ -87,6 +87,7 @@ public sealed class DocxFingerprint
     {
         var w = instr?.Trim().Split(' ', 2)[0].ToUpperInvariant();
         if (w is "PAGE" or "NUMPAGES") PageFields++;
+        else if (w == "HYPERLINK") Hyperlinks++; // движок пишет ссылки полем HYPERLINK — это та же гиперссылка
     }
 
     private void ScanMain(ZipArchiveEntry e, DecompressionBudget budget)

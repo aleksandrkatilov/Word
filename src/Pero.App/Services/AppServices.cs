@@ -63,6 +63,7 @@ public sealed class AppSettings
     /// <summary>Язык интерфейса: ru или en.</summary>
     public string Language { get; set; } = "ru";
     public int AutoRecoverSeconds { get; set; } = 30;
+    public bool SpellCheck { get; set; } = true;
     public string? SyncfusionLicenseKey { get; set; }
 
     public static string FilePath =>

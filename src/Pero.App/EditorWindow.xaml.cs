@@ -57,15 +57,13 @@ public partial class EditorWindow : RibbonWindow
         _displayName = string.Format(Strings.Untitled, ++_untitledCounter);
 
         LanguageStatus.Text = Strings.StatusLanguage;
-        Stage0Menu.Header = Strings.ProtoTab + " ▾";
-        MenuExportPdf.Header = Strings.ExportPdf + "…";
-        MenuExportTxt.Header = Strings.ExportTxt + "…";
-        MenuReport.Header = Strings.CompatReport;
-        MenuRoundTrip.Header = Strings.RoundTrip;
-        RecentMenu.Header = Strings.RecentFiles;
-        RecentMenu.Items.Add(new MenuItem()); // заглушка, чтобы подменю открывалось
         MessageBarDetailsButton.Content = Strings.Details;
         MessageBarCopyButton.Content = Strings.SaveCopy;
+        SetAutomationNames();
+
+        // До первой разметки движок присылает ContentChanged без правок пользователя —
+        // не помечаем новый документ как изменённый (иначе копия восстановления и вопрос при закрытии).
+        _suppressDirty = true;
 
         Editor.ContentChanged += (_, _) => OnContentChanged();
 
@@ -76,6 +74,9 @@ public partial class EditorWindow : RibbonWindow
         AddShortcut(Key.S, ModifierKeys.Control, () => _ = SaveAsync(saveAs: false));
         AddShortcut(Key.S, ModifierKeys.Control | ModifierKeys.Shift, () => _ = SaveAsync(saveAs: true));
         AddShortcut(Key.F12, ModifierKeys.None, () => _ = SaveAsync(saveAs: true));
+        AddShortcut(Key.P, ModifierKeys.Control, Print);
+        InitNavigation();
+        ApplySpellCheck();
 
         PreviewDragOver += OnPreviewDragOver;
         PreviewDrop += OnPreviewDrop;
@@ -83,7 +84,13 @@ public partial class EditorWindow : RibbonWindow
         Closed += OnClosed;
         Deactivated += (_, _) => _ = AutoRecoverAsync();
         // вкладку добавляем после применения шаблонов ленты
-        Loaded += (_, _) => { Editor.Focus(); _ = Dispatcher.InvokeAsync(AddStage0RibbonTab, DispatcherPriority.Loaded); };
+        Loaded += async (_, _) =>
+        {
+            Editor.Focus();
+            await Dispatcher.InvokeAsync(CustomizeRibbon, DispatcherPriority.Loaded);   // после применения шаблонов ленты
+            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+            if (!_loadedSomething) { _suppressDirty = false; _dirty = false; UpdateTitle(); }
+        };
 
         _statusTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(400), DispatcherPriority.Background, (_, _) => UpdatePageStatus(), Dispatcher);
         _wordTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(1500), DispatcherPriority.ApplicationIdle, (_, _) => UpdateWordCount(), Dispatcher) { IsEnabled = false };
@@ -279,12 +286,9 @@ public partial class EditorWindow : RibbonWindow
             await Task.Run(() => AtomicFileWriter.Write(target!, output =>
             {
                 using var input = File.OpenRead(engineOut);
-                if (detached.IsEmpty) input.CopyTo(output);
-                else
-                {
-                    var result = detached.ReinjectInto(input, output);
-                    if (result.Skipped.Count > 0) Log.Info($"DETACHED skipped={result.Skipped.Count}");
-                }
+                var result = SavePipeline.Process(input, output, detached);
+                if (result.MergeCellsRestored > 0 || result.PartsSkipped.Count > 0)
+                    Log.Info($"SAVE fixups merges={result.MergeCellsRestored} skipped={result.PartsSkipped.Count}");
             },
             validate: p => inspector.Inspect(p) is { Status: InspectionStatus.Rejected } r ? r.RejectReason : null));
 
@@ -563,6 +567,7 @@ public partial class EditorWindow : RibbonWindow
     {
         _wordTimer.Stop();
         int? words = WordCounter.Count(Editor.Document);
+        RefreshHeadings();
         WordStatus.Text = string.Format(Strings.StatusWords, words?.ToString("N0") ?? "—");
     }
 
@@ -615,9 +620,7 @@ public partial class EditorWindow : RibbonWindow
             {
                 using (var input = File.OpenRead(engineOut))
                 using (var output = File.Create(merged))
-                {
-                    if (detached.IsEmpty) input.CopyTo(output); else detached.ReinjectInto(input, output);
-                }
+                    SavePipeline.Process(input, output, detached);
                 return DocxFingerprint.FromFile(before).CompareTo(DocxFingerprint.FromFile(merged));
             });
             Mouse.OverrideCursor = null;
@@ -647,45 +650,6 @@ public partial class EditorWindow : RibbonWindow
         new Window { Title = title, Owner = this, Width = 640, Height = 460, Content = box, WindowStartupLocation = WindowStartupLocation.CenterOwner }.ShowDialog();
     }
 
-    private void RecentMenu_SubmenuOpened(object sender, RoutedEventArgs e)
-    {
-        RecentMenu.Items.Clear();
-        foreach (var f in S.Recent.Items)
-        {
-            var item = new MenuItem { Header = f.Replace("_", "__") };
-            item.Click += (_, _) => OpenInNewWindow(f, this);
-            RecentMenu.Items.Add(item);
-        }
-        if (RecentMenu.Items.Count == 0) RecentMenu.Items.Add(new MenuItem { Header = "—", IsEnabled = false });
-    }
-
-    /// <summary>Вкладка «Этап 0» на ленте с командами проверки. Если лента не принимает вкладки, команды остаются в строке состояния.</summary>
-    private void AddStage0RibbonTab()
-    {
-        try
-        {
-            // SfRichTextRibbon — обёртка; настоящая лента находится внутри её шаблона.
-            var ribbon = FindDescendant<Syncfusion.Windows.Tools.Controls.Ribbon>(RichRibbon);
-            if (ribbon is null) { Log.Info("ribbon-tab: inner Ribbon not found"); return; }
-            var bar = new RibbonBar { Header = Strings.ProtoGroup };
-            bar.Items.Add(MakeRibbonButton(Strings.ExportPdf, ExportPdf_Click));
-            bar.Items.Add(MakeRibbonButton(Strings.ExportTxt, ExportTxt_Click));
-            bar.Items.Add(MakeRibbonButton(Strings.CompatReport, ShowReport_Click));
-            bar.Items.Add(MakeRibbonButton(Strings.RoundTrip, RoundTrip_Click));
-            var tab = new RibbonTab { Caption = Strings.ProtoTab };
-            tab.Items.Add(bar);
-            ribbon.Items.Add(tab);
-        }
-        catch (Exception ex) { Log.Error("ribbon-tab", ex); }
-    }
-
-    private static RibbonButton MakeRibbonButton(string label, RoutedEventHandler click)
-    {
-        var b = new RibbonButton { Label = label };
-        b.Click += click;
-        return b;
-    }
-
     private static T? FindDescendant<T>(DependencyObject root) where T : DependencyObject
     {
         int n = System.Windows.Media.VisualTreeHelper.GetChildrenCount(root);
@@ -696,6 +660,18 @@ public partial class EditorWindow : RibbonWindow
             if (FindDescendant<T>(child) is { } deeper) return deeper;
         }
         return null;
+    }
+
+    /// <summary>Подписи для экранного диктора и UI Automation (раздел «Доступность»).</summary>
+    private void SetAutomationNames()
+    {
+        void N(DependencyObject o, string name) => System.Windows.Automation.AutomationProperties.SetName(o, name);
+        N(Editor, Strings.IsRussian ? "Документ" : "Document");
+        N(MessageBarClose, Strings.IsRussian ? "Закрыть сообщение" : "Close message");
+        N(ZoomSlider, Strings.IsRussian ? "Масштаб" : "Zoom");
+        N(ZoomInButton, Strings.IsRussian ? "Увеличить масштаб" : "Zoom in");
+        N(ZoomOutButton, Strings.IsRussian ? "Уменьшить масштаб" : "Zoom out");
+        N(NavClose, Strings.IsRussian ? "Закрыть область навигации" : "Close navigation pane");
     }
 
     private static void TryDelete(string path)

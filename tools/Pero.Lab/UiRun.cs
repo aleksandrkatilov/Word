@@ -14,6 +14,8 @@ public sealed class UiRun(string exe, string samples, string outDir, Action<stri
 {
     private readonly UIA3Automation _auto = new();
     private readonly List<(string Name, bool Ok, string Note)> _results = [];
+    private readonly List<Session> _sessions = [];
+    private string RecoveryDir => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Pero", "Recovery");
     private string Work => Path.Combine(Path.GetTempPath(), "pero-ui");
 
     public List<(string Name, bool Ok, string Note)> RunAll()
@@ -26,7 +28,7 @@ public sealed class UiRun(string exe, string samples, string outDir, Action<stri
 
         Scenario("01-empty", () =>
         {
-            using var s = Start();
+            var s = Start();
             Shot("ui-01-empty");
             Check(s.Window.Title.Contains("Перо"), $"заголовок «{s.Window.Title}»");
         });
@@ -34,7 +36,7 @@ public sealed class UiRun(string exe, string samples, string outDir, Action<stri
         foreach (var sample in new[] { "01-styles-lists-multipage", "02-tables", "03-images-links" })
             Scenario("open-" + sample, () =>
             {
-                using var s = Start(Copy(sample));
+                var s = Start(Copy(sample));
                 WaitTitle(s.Window, sample);
                 Thread.Sleep(2500);
                 Shot("ui-open-" + sample);
@@ -42,7 +44,7 @@ public sealed class UiRun(string exe, string samples, string outDir, Action<stri
 
         Scenario("readonly-04", () =>
         {
-            using var s = Start(Copy("04-unsupported"), waitMain: false);
+            var s = Start(Copy("04-unsupported"), waitMain: false);
             var dlg = WaitDialog(s.App.ProcessId, TimeSpan.FromSeconds(30));
             Check(dlg is not null, "нет вопроса о режиме только чтения");
             Shot("ui-04-prompt");
@@ -57,7 +59,7 @@ public sealed class UiRun(string exe, string samples, string outDir, Action<stri
         foreach (var bad in new[] { "90-password-or-doc", "91-truncated", "92-zip-slip" })
             Scenario("reject-" + bad, () =>
             {
-                using var s = Start(Copy(bad), waitMain: false);
+                var s = Start(Copy(bad), waitMain: false);
                 var dlg = WaitDialog(s.App.ProcessId, TimeSpan.FromSeconds(30));
                 Check(dlg is not null, "нет сообщения об ошибке");
                 Shot("ui-reject-" + bad);
@@ -68,7 +70,7 @@ public sealed class UiRun(string exe, string samples, string outDir, Action<stri
         {
             string path = Copy("01-styles-lists-multipage");
             var before = File.GetLastWriteTimeUtc(path);
-            using var s = Start(path);
+            var s = Start(path);
             WaitTitle(s.Window, "01-styles");
             Thread.Sleep(2000);
             ClickPage(s.Window);
@@ -102,7 +104,7 @@ public sealed class UiRun(string exe, string samples, string outDir, Action<stri
             s.App.Kill();
             s.Dispose();
             Thread.Sleep(1500);
-            using var s2 = Start(waitMain: false);
+            var s2 = Start(waitMain: false);
             var dlg = WaitDialog(s2.App.ProcessId, TimeSpan.FromSeconds(30));
             Check(dlg is not null, "нет предложения восстановления");
             Shot("ui-recovery-prompt");
@@ -113,10 +115,67 @@ public sealed class UiRun(string exe, string samples, string outDir, Action<stri
             Check(wins.Any(w => (w.Name ?? "").Contains("02-tables")), "восстановленный документ не открылся: " + string.Join(", ", wins.Select(w => w.Name)));
         });
 
+        Scenario("backstage-file", () =>
+        {
+            var s = Start(Copy("01-styles-lists-multipage"));
+            WaitTitle(s.Window, "01-styles");
+            Thread.Sleep(2500);
+            ClickByName(s.Window, "Файл");
+            Thread.Sleep(1500);
+            Shot("ui-file-info");
+            ClickByName(s.Window, "Открыть");
+            Thread.Sleep(1000);
+            Shot("ui-file-open");
+            ClickByName(s.Window, "Параметры");
+            Thread.Sleep(1000);
+            Shot("ui-file-options");
+            var all = string.Join("|", s.Window.FindAllDescendants().Select(e => e.Name).Where(n => !string.IsNullOrEmpty(n)));
+            Check(!all.Contains("Зашифровать") && !all.Contains("Ограничить редактирование"), "в меню «Файл» остались команды вне P0");
+        });
+
+        Scenario("layout-tab", () =>
+        {
+            string path = Copy("01-styles-lists-multipage");
+            var s = Start(path);
+            WaitTitle(s.Window, "01-styles");
+            Thread.Sleep(2500);
+            ClickByName(s.Window, "Макет");
+            Thread.Sleep(1200);
+            Shot("ui-layout-tab");
+            ClickByName(s.Window, "Альбомная");
+            Thread.Sleep(2500);
+            Shot("ui-layout-landscape");
+            ClickByName(s.Window, "Узкие");
+            Thread.Sleep(1500);
+            var before = File.GetLastWriteTimeUtc(path);
+            Keyboard.TypeSimultaneously(VirtualKeyShort.CONTROL, VirtualKeyShort.KEY_S);
+            WaitUntil(() => File.GetLastWriteTimeUtc(path) > before && FileReady(path), TimeSpan.FromSeconds(30));
+            Thread.Sleep(1500);
+            var fp = DocxFingerprint.FromFile(path);
+            var dims = fp.PageSize.Split(' ')[0].Split('x').Select(v => int.TryParse(v, out int n) ? n : 0).ToArray();
+            Check(dims.Length == 2 && dims[0] > dims[1], "после «Альбомная» размер страницы " + fp.PageSize);
+            Check(fp.PageMargins.Contains("L720") || fp.PageMargins.Contains("L719") || fp.PageMargins.Contains("L721"), "поля «Узкие» не сохранились: " + fp.PageMargins);
+        });
+
+        Scenario("nav-search", () =>
+        {
+            var s = Start(Copy("01-styles-lists-multipage"));
+            WaitTitle(s.Window, "01-styles");
+            Thread.Sleep(2500);
+            ClickPage(s.Window);
+            Keyboard.TypeSimultaneously(VirtualKeyShort.CONTROL, VirtualKeyShort.KEY_F);
+            Thread.Sleep(800);
+            Keyboard.Type("Подраздел");
+            Thread.Sleep(2000);
+            Shot("ui-nav-search");
+            var names = string.Join("|", s.Window.FindAllDescendants().Select(e => e.Name ?? ""));
+            Check(names.Contains("Найдено: 5"), "нет «Найдено: 5» в области навигации");
+        });
+
         Scenario("external-change", () =>
         {
             string path = Copy("03-images-links");
-            using var s = Start(path);
+            var s = Start(path);
             WaitTitle(s.Window, "03-images");
             Thread.Sleep(1500);
             ClickPage(s.Window);
@@ -158,7 +217,9 @@ public sealed class UiRun(string exe, string samples, string outDir, Action<stri
         var killer = new DialogKiller(app.ProcessId, log);
         Window window = waitMain ? app.GetMainWindow(_auto, TimeSpan.FromSeconds(60)) : null!;
         window?.Move(0, 0);
-        return new Session(app, window!, killer);
+        var session = new Session(app, window!, killer);
+        _sessions.Add(session);
+        return session;
     }
 
     private string Copy(string sample)
@@ -168,19 +229,44 @@ public sealed class UiRun(string exe, string samples, string outDir, Action<stri
         return dst;
     }
 
-    private void Scenario(string name, Action body)
+    private void Scenario(string name, Action body, bool keepRecovery = false)
     {
         log($"UI scenario {name}");
+        if (!keepRecovery && Directory.Exists(RecoveryDir)) try { Directory.Delete(RecoveryDir, true); } catch { }
         try { body(); _results.Add((name, true, "")); }
         catch (Exception ex)
         {
             _results.Add((name, false, ex.Message));
-            log($"UI FAIL {name}: {ex}");
-            try { Shot("ui-FAIL-" + name); } catch { }
+            log($"UI FAIL {name}: {ex.Message}");
+            try { Shot("ui-FAIL-" + name); } catch { }   // снимок до закрытия приложения
         }
+        foreach (var s in _sessions) s.Dispose();
+        _sessions.Clear();
         foreach (var p in Process.GetProcessesByName(Path.GetFileNameWithoutExtension(exe)))
             try { p.Kill(); } catch { }
         Thread.Sleep(800);
+    }
+
+    private static bool FileReady(string path)
+    {
+        try { using var f = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read); return f.Length > 0; }
+        catch { return false; }
+    }
+
+    private void ClickByName(Window w, string name)
+    {
+        AutomationElement? el = null;
+        var sw = Stopwatch.StartNew();
+        while (el is null && sw.Elapsed < TimeSpan.FromSeconds(10))
+        {
+            el = w.FindFirstDescendant(cf => cf.ByName(name));
+            if (el is null) Thread.Sleep(300);
+        }
+        if (el is null) throw new Exception($"не найден элемент «{name}»");
+        var r = el.BoundingRectangle;
+        if (r.Width > 0) Mouse.Click(new System.Drawing.Point(r.Left + r.Width / 2, r.Top + r.Height / 2));
+        else el.Click();
+        Thread.Sleep(300);
     }
 
     private static void Check(bool cond, string message) { if (!cond) throw new Exception(message); }

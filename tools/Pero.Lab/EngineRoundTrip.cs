@@ -68,10 +68,12 @@ public static class EngineRoundTrip
                         using (var input = File.OpenRead(engineOut))
                         using (var output = File.Create(merged))
                         {
-                            if (detached.IsEmpty) input.CopyTo(output); else detached.ReinjectInto(input, output);
+                            var pr = SavePipeline.Process(input, output, detached);
+                            if (pr.MergeCellsRestored > 0) log($"{name}: EngineFixups восстановил ячеек объединения: {pr.MergeCellsRestored}");
                         }
                         File.Copy(merged, Path.Combine(outDir, "saved-" + name), true);
-                        diffs = DocxFingerprint.FromFile(file).CompareTo(DocxFingerprint.FromFile(merged));
+                        diffs = DocxFingerprint.FromFile(file).CompareTo(DocxFingerprint.FromFile(Watermark.StripIfTrial(merged)));
+                        if (i == 0 && name.StartsWith("01")) log($"page size px={editor.Document.Sections.Cast<SectionAdv>().First().SectionFormat.PageSize} margin={editor.Document.Sections.Cast<SectionAdv>().First().SectionFormat.PageMargin}");
                         var re = inspector.Inspect(merged);
                         if (re.Status == InspectionStatus.Rejected) error = "сохранённый файл отклонён: " + re.RejectReason;
                     }
@@ -84,9 +86,58 @@ public static class EngineRoundTrip
             if (perf)
                 log($"PERF {name}: pages={pages} load median={Median(loads)} p95≈{(loads.Count > 0 ? loads.Max() : 0)} ms; save median={Median(saves)} ms; peakWS={Process.GetCurrentProcess().PeakWorkingSet64 / (1024 * 1024)} MB");
         }
+        results.Add(await EditRoundTrip(editor, win, samplesDir, work, outDir, log));
         win.Close();
         WriteReport(results, Path.Combine(outDir, "engine-roundtrip.md"));
         return results;
+    }
+
+    /// <summary>
+    /// Правка через API движка → сохранение → проверка, что правка в файле и остальное не потеряно:
+    /// вставка текста в начало, альбомная ориентация, узкие поля.
+    /// </summary>
+    private static async Task<Result> EditRoundTrip(SfRichTextBoxAdv editor, Window win, string samplesDir, string work, string outDir, Action<string> log)
+    {
+        string src = Path.Combine(samplesDir, "01-styles-lists-multipage.docx");
+        try
+        {
+            editor.Load(src);
+            await WaitLayout(editor, TimeSpan.FromSeconds(60));
+            var start = editor.Document.DocumentStart;
+            editor.Selection.Select(start, start);
+            editor.Selection.InsertText("ПРАВКА ЧЕРЕЗ API. ");
+            var sf0 = editor.Document.Sections.Cast<SectionAdv>().First().SectionFormat;
+            var size = sf0.PageSize;
+            editor.Selection.Select(editor.Document.DocumentStart, editor.Document.DocumentEnd);
+            editor.Selection.SectionFormat.PageSize = new Size(size.Height, size.Width);
+            double narrow = 12.7 * 96 / 25.4;
+            editor.Selection.SectionFormat.PageMargin = new Thickness(narrow);
+            int pages = await WaitLayout(editor, TimeSpan.FromSeconds(60));
+            Lab.Shot(win, Path.Combine(outDir, "01-edited-landscape.png"));
+
+            string engineOut = Path.Combine(work, "engine-edit.docx"), merged = Path.Combine(work, "merged-edit.docx");
+            editor.Save(engineOut);
+            using (var input = File.OpenRead(engineOut))
+            using (var output = File.Create(merged))
+                SavePipeline.Process(input, output, DetachedParts.Capture(src));
+            File.Copy(merged, Path.Combine(outDir, "saved-01-edited.docx"), true);
+            var fp = DocxFingerprint.FromFile(Watermark.StripIfTrial(merged));
+            var problems = new List<string>();
+            if (!fp.Text.Contains("ПРАВКА ЧЕРЕЗ API")) problems.Add("нет вставленного текста");
+            var dims = fp.PageSize.Split(' ')[0].Split('x').Select(v => int.TryParse(v, out int n) ? n : 0).ToArray();
+            if (dims.Length != 2 || dims[0] <= dims[1]) problems.Add("страница не альбомная: " + fp.PageSize);
+            if (!fp.PageMargins.Contains("L72")) problems.Add("поля не узкие: " + fp.PageMargins);
+            var losses = DocxFingerprint.FromFile(src).CompareTo(fp).Where(d => d.IsLoss && d.Property is not ("Текст" or "Размер страницы" or "Поля страницы")).ToList();
+            problems.AddRange(losses.Select(d => $"{d.Property}: {d.Before} → {d.After}"));
+            log($"edit roundtrip: pages={pages} problems={problems.Count} size={fp.PageSize} margins={fp.PageMargins}");
+            return new Result("01-edit-via-api", "Ok", pages, 0, 0,
+                problems.Select(pr => new DocxFingerprint.Difference("Правка", "", pr, true)).ToList(), null);
+        }
+        catch (Exception ex)
+        {
+            log("edit roundtrip FAILED: " + ex);
+            return new Result("01-edit-via-api", "Ok", 0, 0, 0, [], ex.GetType().Name + ": " + ex.Message);
+        }
     }
 
     /// <summary>Ждать, пока число страниц перестанет меняться (разметка завершена).</summary>

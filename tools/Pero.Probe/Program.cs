@@ -59,14 +59,14 @@ switch (args[0])
         return 0;
     }
 
-    case "reinject" when args.Length == 4:
+    case "pipeline" or "reinject" when args.Length == 4:
     {
-        // Вернуть отделимые части исходника (args[1]) в файл движка (args[2]) → args[3].
+        // Конвейер сохранения приложения: файл движка (args[2]) → исправления → части исходника (args[1]) → args[3].
         var detached = DetachedParts.Capture(args[1]);
         using var input = File.OpenRead(args[2]);
         using var output = File.Create(args[3]);
-        var res = detached.ReinjectInto(input, output);
-        Console.WriteLine($"восстановлено: {string.Join(", ", res.Restored)}; пропущено: {string.Join(", ", res.Skipped)}");
+        var res = SavePipeline.Process(input, output, detached);
+        Console.WriteLine($"ячеек объединения восстановлено: {res.MergeCellsRestored}; частей возвращено: {string.Join(", ", res.PartsRestored)}");
         return 0;
     }
 
@@ -91,7 +91,7 @@ static int Usage()
           inspect <файл|папка>...      проверить пакет и показать найденные конструкции
           compare <до.docx> <после.docx> сравнить структуру после кругового обмена (код 1 = потери)
           matrix  <папка>               матрица конструкций по набору файлов (Markdown)
-          reinject <исходный> <файл движка> <результат>  вернуть отделимые части OOXML
+          pipeline <исходный> <файл движка> <результат>  конвейер сохранения: исправления + отделимые части
           registry                      вывести реестр совместимости в JSON
 
         PERO_COMPAT_REGISTRY=<путь>  — файл переопределения реестра.
