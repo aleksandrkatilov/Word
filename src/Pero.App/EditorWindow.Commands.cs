@@ -124,7 +124,8 @@ public sealed partial class EditorWindow
         C("Удалить строку", null, () => Ed.DeleteRow(), edits: true);
         C("Удалить столбец", null, () => Ed.DeleteColumn(), edits: true);
         C("Удалить таблицу", null, () => Ed.DeleteTable(), edits: true);
-        C("Объединить ячейки", null, () => Ed.MergeCellsInRow(), edits: true);
+        C("Объединить ячейки", null, () => Ed.MergeCells(), edits: true);
+        C("Разделить ячейку", null, () => Ed.SplitCell(), edits: true);
         C("Ширина столбца…", null, ColumnWidth, edits: true);
         // Инструменты
         C("Число слов", null, () => MessageBox.Show(this, $"Слов: {Ed.WordCount():N0}\nСтраниц: {_view.Layout.Pages.Count}", "Число слов", MessageBoxButton.OK, MessageBoxImage.Information));
@@ -183,7 +184,7 @@ public sealed partial class EditorWindow
         var spacing = new MenuItem { Header = "Межстрочный интервал" };
         foreach (var n in new[] { "Интервал 1", "Интервал 1,15", "Интервал 1,5", "Интервал 2" }) spacing.Items.Add(Item(n, n.Replace("Интервал ", "")));
         var table = new MenuItem { Header = "Таблица" };
-        foreach (var n in new[] { "Вставить строку выше", "Вставить строку ниже", "Вставить столбец слева", "Вставить столбец справа", "-", "Удалить строку", "Удалить столбец", "Удалить таблицу", "-", "Объединить ячейки", "Ширина столбца…" })
+        foreach (var n in new[] { "Вставить строку выше", "Вставить строку ниже", "Вставить столбец слева", "Вставить столбец справа", "-", "Удалить строку", "Удалить столбец", "Удалить таблицу", "-", "Объединить ячейки", "Разделить ячейку", "Ширина столбца…" })
             table.Items.Add(n == "-" ? new Separator() : Item(n));
         var orientation = new MenuItem { Header = "Ориентация" };
         orientation.Items.Add(Item("Книжная ориентация", "Книжная"));
@@ -283,7 +284,7 @@ public sealed partial class EditorWindow
         if (Ed.CurrentCell() is not null)
         {
             m.Items.Add(new Separator());
-            foreach (var n in new[] { "Вставить строку выше", "Вставить строку ниже", "Вставить столбец слева", "Вставить столбец справа", "Удалить строку", "Удалить столбец", "Удалить таблицу" })
+            foreach (var n in new[] { "Вставить строку выше", "Вставить строку ниже", "Вставить столбец слева", "Вставить столбец справа", "Удалить строку", "Удалить столбец", "Удалить таблицу", "Объединить ячейки", "Разделить ячейку" })
                 m.Items.Add(Item(n));
         }
         m.Items.Add(new Separator());

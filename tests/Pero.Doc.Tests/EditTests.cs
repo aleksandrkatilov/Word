@@ -209,6 +209,33 @@ internal static class EditTests
             Eq(VMerge.Restart, t.Rows[0].Cells[1].VMerge, "после удаления начала объединение начинается со следующей строки");
         });
 
+        Test("Таблица: объединение по горизонтали и вертикали и разделение обратно", () =>
+        {
+            var ed = new DocEditor(Model.Document.CreateBlank());
+            ed.InsertTable(3, 3);
+            var (t, _, _) = ed.CurrentCell()!.Value;
+            int P(int r, int c) => ed.Index.IndexOf((Paragraph)t.Rows[r].Cells[c].Blocks[0]);
+            ed.Select(new Selection(new DocPos(P(0, 0), 0), new DocPos(P(0, 2), 0)));
+            ed.MergeCells();
+            Eq(1, t.Rows[0].Cells.Count, "ячеек в строке после объединения");
+            Eq(3, t.Rows[0].Cells[0].GridSpan, "охват");
+            ed.Select(new Selection(new DocPos(P(1, 1), 0), new DocPos(P(2, 1), 0)));
+            ed.MergeCells();
+            Eq(VMerge.Restart, t.Rows[1].Cells[1].VMerge, "начало вертикального объединения");
+            Eq(VMerge.Continue, t.Rows[2].Cells[1].VMerge, "продолжение");
+            var re = SaveReload(ed.Doc, out var bytes);
+            var rt = re.Body.OfType<Table>().Single();
+            Eq(3, rt.Rows[0].Cells[0].GridSpan, "охват после сохранения");
+            Eq(VMerge.Continue, rt.Rows[2].Cells[1].VMerge, "вертикальное после сохранения");
+            ed.Select(Selection.At(new DocPos(P(0, 0), 0)));
+            ed.SplitCell();
+            Eq(3, t.Rows[0].Cells.Count, "после разделения по горизонтали");
+            ed.Select(Selection.At(new DocPos(P(1, 1), 0)));
+            ed.SplitCell();
+            Assert(t.Rows.All(r => r.Cells.All(c => c.VMerge == VMerge.None)), "вертикальное объединение не снято");
+            Assert(t.Rows.All(r => r.Cells.Sum(c => c.GridSpan) == t.Grid.Count), "строки не совпадают с сеткой");
+        });
+
         Test("Параметры страницы: альбомная, поля, Letter — сохраняются", () =>
         {
             var ed = new DocEditor(Model.Document.CreateBlank());

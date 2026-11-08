@@ -404,24 +404,82 @@ public sealed partial class DocEditor
     }
 
     /// <summary>Объединить выделенные ячейки одной строки по горизонтали.</summary>
-    public void MergeCellsInRow()
+    /// <summary>Объединить выделенные ячейки: в одной строке — по горизонтали, в одном столбце — по вертикали.</summary>
+    public void MergeCellsInRow() => MergeCells();
+
+    public void MergeCells()
     {
         var a = Index[Selection.Start.Para];
         var b = Index[Selection.End.Para];
-        if (a.Table is null || !ReferenceEquals(a.Table, b.Table) || a.Row != b.Row || a.CellIndex == b.CellIndex) return;
+        if (a.Table is null || !ReferenceEquals(a.Table, b.Table) || a.Cell is null || b.Cell is null) return;
+        var t = a.Table;
+        if (a.Row == b.Row)
+        {
+            if (a.CellIndex == b.CellIndex) return;
+            Execute("Объединить ячейки", () =>
+            {
+                var row = t.Rows[a.Row];
+                var first = row.Cells[a.CellIndex];
+                for (int i = b.CellIndex; i > a.CellIndex; i--)
+                {
+                    var c = row.Cells[i];
+                    first.GridSpan += c.GridSpan;
+                    foreach (var blk in c.Blocks) if (blk is not Paragraph { Length: 0 }) first.Blocks.Add(blk);
+                    row.Cells.RemoveAt(i);
+                }
+                first.RawTcPr?.Element(W + "tcW")?.Remove();
+                Rebuild();
+                return Selection.At(new DocPos(Index.IndexOf((Paragraph)first.Blocks[0]), 0));
+            });
+            return;
+        }
+        int colA = GridColumnOf(t.Rows[a.Row], a.CellIndex), colB = GridColumnOf(t.Rows[b.Row], b.CellIndex);
+        if (colA != colB) return;
         Execute("Объединить ячейки", () =>
         {
-            var row = a.Table.Rows[a.Row];
-            var first = row.Cells[a.CellIndex];
-            for (int i = b.CellIndex; i > a.CellIndex; i--)
+            var top = t.Rows[a.Row].Cells[a.CellIndex];
+            top.VMerge = VMerge.Restart;
+            for (int r = a.Row + 1; r <= b.Row; r++)
             {
-                var c = row.Cells[i];
-                first.GridSpan += c.GridSpan;
-                foreach (var blk in c.Blocks) if (blk is not Paragraph { Length: 0 }) first.Blocks.Add(blk);
-                row.Cells.RemoveAt(i);
+                if (CellAtGrid(t.Rows[r], colA) is not { } c || c.GridSpan != top.GridSpan) continue;
+                foreach (var blk in c.Blocks.ToList()) if (blk is not Paragraph { Length: 0 }) top.Blocks.Add(blk);
+                c.Blocks.Clear();
+                c.Blocks.Add(new Paragraph());
+                c.VMerge = VMerge.Continue;
             }
             Rebuild();
-            return Selection.At(new DocPos(Index.IndexOf((Paragraph)first.Blocks[0]), 0));
+            return Selection.At(new DocPos(Index.IndexOf((Paragraph)top.Blocks[0]), 0));
+        });
+    }
+
+    /// <summary>Разделить объединённую ячейку обратно (по горизонтали и по вертикали).</summary>
+    public void SplitCell()
+    {
+        if (CurrentCell() is not var (t, r, ci)) return;
+        var cell = t.Rows[r].Cells[ci];
+        if (cell.GridSpan <= 1 && cell.VMerge != VMerge.Restart) return;
+        Execute("Разделить ячейку", () =>
+        {
+            int col = GridColumnOf(t.Rows[r], ci);
+            if (cell.VMerge == VMerge.Restart)
+            {
+                cell.VMerge = VMerge.None;
+                for (int k = r + 1; k < t.Rows.Count && CellAtGrid(t.Rows[k], col) is { VMerge: VMerge.Continue } c; k++) c.VMerge = VMerge.None;
+            }
+            if (cell.GridSpan > 1)
+            {
+                int span = cell.GridSpan;
+                cell.GridSpan = 1;
+                cell.RawTcPr?.Element(W + "tcW")?.Remove();
+                for (int k = 1; k < span; k++)
+                {
+                    var extra = new TableCell { RawTcPr = cell.RawTcPr is null ? null : new XElement(cell.RawTcPr) };
+                    extra.Blocks.Add(new Paragraph());
+                    t.Rows[r].Cells.Insert(ci + k, extra);
+                }
+            }
+            Rebuild();
+            return Selection.At(new DocPos(Index.IndexOf((Paragraph)cell.Blocks[0]), 0));
         });
     }
 
