@@ -143,13 +143,16 @@ public sealed class UiRun(string exe, string samples, string outDir, Action<stri
             var s = Start(path);
             WaitTitle(s.Window, "01-styles");
             Thread.Sleep(2500);
-            SelectRibbonTab(s.Window, steps: 2, expectButton: "Альбомная");
+            bool byName = SelectRibbonTab(s.Window, steps: 2, expectButton: "Альбомная");
             Thread.Sleep(800);
             Shot("ui-layout-tab");
-            ClickByName(s.Window, "Альбомная");
+            // Кнопки добавленной вкладки движок не отдаёт в UI Automation — тогда щелчок по месту
+            // кнопки (тема Windows11Light, окно в 0,0). Результат проверяется по сохранённому файлу.
+            var wr = s.Window.BoundingRectangle;
+            if (byName) ClickByName(s.Window, "Альбомная"); else Mouse.Click(new System.Drawing.Point(wr.Left + 330, wr.Top + 100));
             Thread.Sleep(2500);
             Shot("ui-layout-landscape");
-            ClickByName(s.Window, "Узкие");
+            if (byName) ClickByName(s.Window, "Узкие"); else Mouse.Click(new System.Drawing.Point(wr.Left + 57, wr.Top + 100));
             Thread.Sleep(1500);
             var before = File.GetLastWriteTimeUtc(path);
             Keyboard.TypeSimultaneously(VirtualKeyShort.CONTROL, VirtualKeyShort.KEY_S);
@@ -272,21 +275,22 @@ public sealed class UiRun(string exe, string samples, string outDir, Action<stri
     /// Движок отдаёт в UI Automation только выбранную вкладку ленты. Переход: щелчок по «Главная»
     /// и стрелки вправо (проверка клавиатурной навигации), запасной путь — щелчок по строке вкладок.
     /// </summary>
-    private void SelectRibbonTab(Window w, int steps, string expectButton)
+    private bool SelectRibbonTab(Window w, int steps, string expectButton)
     {
         var home = w.FindFirstDescendant(cf => cf.ByAutomationId("PART_HomeTab")) ?? throw new Exception("нет вкладки «Главная»");
         var r = home.BoundingRectangle;
         Mouse.Click(new System.Drawing.Point(r.Left + r.Width / 2, r.Top + 12));
         Thread.Sleep(300);
         for (int i = 0; i < steps; i++) { Keyboard.Press(VirtualKeyShort.RIGHT); Thread.Sleep(250); }
-        if (WaitFor(w, expectButton, 2000)) { log("ribbon tab selected by keyboard"); return; }
+        if (WaitFor(w, expectButton, 2000)) { log("ribbon tab selected by keyboard"); return true; }
         File.WriteAllLines(Path.Combine(outDir, "uia-tree-after-keys.txt"),
             w.FindAllDescendants().Select(e => $"{e.ControlType} | {e.Name} | {e.AutomationId} | {e.ClassName} | {e.BoundingRectangle}"));
         Keyboard.Press(VirtualKeyShort.ESCAPE);
         // ширина заголовка вкладки ≈ 72 px в теме Windows11Light
         Mouse.Click(new System.Drawing.Point(r.Left + r.Width / 2 + 72 * steps, r.Top + 12));
-        if (!WaitFor(w, expectButton, 3000)) throw new Exception($"не удалось открыть вкладку с «{expectButton}»");
-        log("ribbon tab selected by mouse");
+        bool found = WaitFor(w, expectButton, 3000);
+        log($"ribbon tab selected by mouse; buttons visible to UIA: {found}");
+        return found;
     }
 
     private static bool WaitFor(Window w, string name, int ms)
