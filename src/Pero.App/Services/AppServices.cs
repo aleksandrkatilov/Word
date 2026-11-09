@@ -14,6 +14,7 @@ public sealed class AppServices : IDisposable
     public RecoveryStore Recovery { get; }
     public RecoveryStore.Session RecoverySession { get; }
     public RecentFiles Recent { get; }
+    public BackupStore Backups { get; } = new(BackupStore.DefaultRoot);
     public AppSettings Settings { get; }
     public string TempDir { get; }
 
@@ -63,8 +64,8 @@ public sealed class AppSettings
     /// <summary>Язык интерфейса: ru или en.</summary>
     public string Language { get; set; } = "ru";
     public int AutoRecoverSeconds { get; set; } = 30;
-    public bool SpellCheck { get; set; } = true;
-    public string? SyncfusionLicenseKey { get; set; }
+    public bool ShowHorizontalRuler { get; set; } = true;
+    public bool ShowVerticalRuler { get; set; } = true;
 
     public static string FilePath =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Pero", "settings.json");

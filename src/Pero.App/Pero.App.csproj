@@ -6,34 +6,26 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Pero</RootNamespace>
-    <AssemblyName>Pero</AssemblyName>
+    <AssemblyName>RWrite</AssemblyName>
+    <ApplicationIcon>Assets\rilvo.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <Product>Перо</Product>
-    <Version>0.1.0</Version>
-    <!-- Строки локализации движка лежат в Resources\*.resx; генератор классов не нужен. -->
+    <Product>RWrite</Product>
+    <AssemblyTitle>RWrite</AssemblyTitle>
+    <Company>Aleksandr Katilov</Company>
+    <Version>0.3.0</Version>
     <SatelliteResourceLanguages>ru</SatelliteResourceLanguages>
-    <SyncfusionVersion>35.1.43</SyncfusionVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Лента в стиле Word + редактор SfRichTextBoxAdv + DocIO (тянется зависимостью). -->
-    <PackageReference Include="Syncfusion.SfRichTextRibbon.WPF" Version="$(SyncfusionVersion)" />
-    <PackageReference Include="Syncfusion.Licensing" Version="$(SyncfusionVersion)" />
-    <!-- Экспорт PDF через DocIO. -->
-    <PackageReference Include="Syncfusion.DocToPDFConverter.WPF" Version="$(SyncfusionVersion)" />
-    <!-- Светлая тема, близкая к Word из Microsoft 365 (визуальный ориентир ТЗ). -->
-    <PackageReference Include="Syncfusion.SfSkinManager.WPF" Version="$(SyncfusionVersion)" />
-    <PackageReference Include="Syncfusion.Themes.Windows11Light.WPF" Version="$(SyncfusionVersion)" />
+    <Content Include="THIRD-PARTY-NOTICES.txt" CopyToOutputDirectory="PreserveNewest" />
+    <Resource Include="Assets\rilvo.ico" />
+    <Resource Include="Assets\rilvo-256.png" />
+    <Resource Include="Assets\rilvo-64.png" />
   </ItemGroup>
 
+  <!-- Собственное ядро: модель, правка, разметка, DOCX, PDF. Сторонних редакторских SDK нет (AC-07). -->
   <ItemGroup>
     <ProjectReference Include="..\Pero.Core\Pero.Core.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Remove="Resources\make_ru_resx.py" />
-    <EmbeddedResource Update="Resources\*.resx">
-      <Generator></Generator>
-    </EmbeddedResource>
+    <ProjectReference Include="..\Pero.Doc\Pero.Doc.csproj" />
   </ItemGroup>
 </Project>

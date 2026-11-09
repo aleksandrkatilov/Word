@@ -35,10 +35,14 @@ jobs:
       - name: Core tests
         run: dotnet run --project tests/Pero.Core.Tests -c Release --no-build
 
-      - name: Reference documents
+      - name: Reference documents and acceptance corpus
         run: |
           pip install python-docx pillow
           python samples/make_samples.py samples/docx --perf
+          python samples/make_corpus.py samples/docx/corpus
+
+      - name: Own core tests (model, editing, layout, PDF, save)
+        run: dotnet run --project tests/Pero.Doc.Tests -c Release --no-build -- samples/docx
 
       - name: Inspect reference documents
         shell: pwsh
@@ -53,7 +57,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Pero-win-x64
+          name: RWrite-win-x64
           path: artifacts/Pero
 
       - name: Installer (Inno Setup)
@@ -64,38 +68,24 @@ jobs:
             if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress | Out-Null }
           } else { $iscc = (Get-Command iscc).Source }
           $iscc = if (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe") { "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" } else { (Get-Command iscc).Source }
-          & $iscc /Q /DAppVersion=0.2.${{ github.run_number }} installer\pero.iss
+          & $iscc /Q /DAppVersion=0.3.${{ github.run_number }} installer\pero.iss
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          Get-ChildItem artifacts\Pero-Setup-*.exe
+          Get-ChildItem artifacts\RWrite-Setup-*.exe
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Pero-Setup
-          path: artifacts/Pero-Setup-*.exe
+          name: RWrite-Setup
+          path: artifacts/RWrite-Setup-*.exe
 
-      - name: Screen 1920x1080 (целевой стенд ТЗ)
+      - name: Screen 1920x1080
         shell: pwsh
         continue-on-error: true
         run: Set-DisplayResolution -Width 1920 -Height 1080 -Force
 
-      - name: Lab — движок, лента, UI-прогон
+      - name: Lab — ядро на корпусе, зависимости (AC-07), UI-прогон
         continue-on-error: true
-        timeout-minutes: 30
-        env:
-          PERO_SYNCFUSION_KEY: ${{ secrets.SYNCFUSION_LICENSE_KEY }}
-        run: dotnet run --project tools/Pero.Lab -c Release -- all samples/docx artifacts/Pero/Pero.exe ci-out
-
-      - name: Lab — поиск зависания (варианты окна)
-        continue-on-error: true
-        timeout-minutes: 6
-        shell: pwsh
-        env:
-          PERO_SYNCFUSION_KEY: ${{ secrets.SYNCFUSION_LICENSE_KEY }}
-        run: |
-          foreach ($v in @("spell-toggle","ribbon-theme-spell-toggle","ribbon-theme")) {
-            dotnet run --project tools/Pero.Lab -c Release --no-build -- hang samples/docx $v ci-out
-            $global:LASTEXITCODE = 0
-          }
+        timeout-minutes: 40
+        run: dotnet run --project tools/Pero.Lab -c Release -- all samples/docx artifacts/Pero/RWrite.exe ci-out
 
       - name: Results → ветка ci-results
         if: always()
