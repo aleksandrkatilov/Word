@@ -6,15 +6,21 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Pero</RootNamespace>
-    <AssemblyName>Pero</AssemblyName>
+    <AssemblyName>RilvoWrite</AssemblyName>
+    <ApplicationIcon>Assets\rilvo.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <Product>Перо</Product>
+    <Product>Rilvo Write</Product>
+    <AssemblyTitle>Rilvo Write</AssemblyTitle>
+    <Company>Aleksandr Katilov</Company>
     <Version>0.3.0</Version>
     <SatelliteResourceLanguages>ru</SatelliteResourceLanguages>
   </PropertyGroup>
 
   <ItemGroup>
     <Content Include="THIRD-PARTY-NOTICES.txt" CopyToOutputDirectory="PreserveNewest" />
+    <Resource Include="Assets\rilvo.ico" />
+    <Resource Include="Assets\rilvo-256.png" />
+    <Resource Include="Assets\rilvo-64.png" />
   </ItemGroup>
 
   <!-- Собственное ядро: модель, правка, разметка, DOCX, PDF. Сторонних редакторских SDK нет (AC-07). -->

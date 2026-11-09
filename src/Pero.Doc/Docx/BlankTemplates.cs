@@ -45,6 +45,6 @@ internal static class BlankTemplates
 
     public const string App = """
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>Pero</Application></Properties>
+<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>Rilvo Write</Application></Properties>
 """;
 }

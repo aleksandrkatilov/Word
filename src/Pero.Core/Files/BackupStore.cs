@@ -105,7 +105,7 @@ public sealed class FileLock : IDisposable
         try
         {
             using var p = System.Diagnostics.Process.GetProcessById(pid);
-            return !p.HasExited && p.ProcessName.Contains("Pero", StringComparison.OrdinalIgnoreCase);
+            return !p.HasExited && string.Equals(p.ProcessName, System.Diagnostics.Process.GetCurrentProcess().ProcessName, StringComparison.OrdinalIgnoreCase);
         }
         catch { return false; }
     }

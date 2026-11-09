@@ -37,7 +37,7 @@ public static class Strings
     public static string RemoveFromList => T("Удалить из списка", "Remove from list");
     public static string RecentMissing => T("Файл не найден: {0}", "File not found: {0}");
     public static string OptLanguage => T("Язык интерфейса", "Display language");
-    public static string OptRestart => T("Язык изменится после перезапуска «Пера».", "The language changes after restarting Pero.");
+    public static string OptRestart => T("Язык изменится после перезапуска Rilvo Write.", "The language changes after restarting Pero.");
     public static string OptAutoRecover => T("Автовосстановление, секунд (10–600)", "AutoRecover interval, seconds (10–600)");
     public static string OptSpell => T("Проверять орфографию при вводе", "Check spelling as you type");
 
@@ -86,7 +86,7 @@ public static class Strings
     public static string LinkBlocked => T("Ссылка не открыта: {0}\n\nПричина: {1}.", "The link was not opened: {0}\n\nReason: {1}.");
     public static string LinkConfirm => T("Открыть ссылку?\n\n{0}", "Open this link?\n\n{0}");
 
-    public static string AppName => T("Перо", "Pero");
+    public static string AppName => "Rilvo Write";
     public static string Untitled => T("Новый документ{0}", "New document{0}");
     public static string StateSaved => T("Сохранено", "Saved");
     public static string StateUnsaved => T("Есть изменения", "Unsaved changes");

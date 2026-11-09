@@ -83,6 +83,7 @@ public sealed partial class EditorWindow : Window
         MinWidth = 760;
         MinHeight = 480;
         Background = Theme.Window;
+        try { Icon = AppIcon(256); } catch (Exception ex) { Log.Error("icon", ex); }
         FontFamily = new FontFamily("Segoe UI");
         FontSize = 13;
         UseLayoutRounding = true;
@@ -126,6 +127,18 @@ public sealed partial class EditorWindow : Window
         UpdateTitle();
     }
 
+    /// <summary>Значок приложения из ресурсов сборки (работает и при создании окна из другой сборки).</summary>
+    private static System.Windows.Media.Imaging.BitmapImage AppIcon(int size)
+    {
+        var bi = new System.Windows.Media.Imaging.BitmapImage();
+        bi.BeginInit();
+        bi.UriSource = new Uri($"pack://application:,,,/RilvoWrite;component/Assets/rilvo-{(size <= 64 ? 64 : 256)}.png", UriKind.Absolute);
+        bi.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+        bi.EndInit();
+        bi.Freeze();
+        return bi;
+    }
+
     private UIElement BuildLayout()
     {
         var root = new DockPanel { LastChildFill = true };
@@ -135,7 +148,8 @@ public sealed partial class EditorWindow : Window
         title.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         title.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         title.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        var icon = new Border { Width = 26, Height = 26, CornerRadius = new CornerRadius(5), Background = Theme.Accent, Margin = new Thickness(0, 0, 10, 0), Child = Theme.IconPath(Theme.Icon.Pen, 16, Brushes.White) };
+        var icon = new System.Windows.Controls.Image { Width = 26, Height = 26, Margin = new Thickness(0, 0, 10, 0), Source = AppIcon(64) };
+        RenderOptions.SetBitmapScalingMode(icon, BitmapScalingMode.HighQuality);
         var names = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
         names.Children.Add(_nameText);
         names.Children.Add(_statusText);
@@ -338,8 +352,8 @@ public sealed partial class EditorWindow : Window
     }
 
     private string ReadOnlyReason() =>
-        _lockedElsewhere ? "Файл уже открыт в другом окне «Пера». Здесь он открыт только для чтения — изменения можно сохранить копией."
-        : _compatReadOnly ? "Только чтение: в документе есть содержимое, которое «Перо» пока не умеет править безопасно (" + (_report?.ToUserText() ?? "") + "). Исходный файл не изменяется; можно сохранить копию."
+        _lockedElsewhere ? "Файл уже открыт в другом окне Rilvo Write. Здесь он открыт только для чтения — изменения можно сохранить копией."
+        : _compatReadOnly ? "Только чтение: в документе есть содержимое, которое Rilvo Write пока не умеет править безопасно (" + (_report?.ToUserText() ?? "") + "). Исходный файл не изменяется; можно сохранить копию."
         : "Документ открыт только для чтения.";
 
     private void ShowOpenMessages(bool recovered, Doc.Model.Document doc)

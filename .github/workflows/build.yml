@@ -57,7 +57,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Pero-win-x64
+          name: RilvoWrite-win-x64
           path: artifacts/Pero
 
       - name: Installer (Inno Setup)
@@ -68,14 +68,14 @@ jobs:
             if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress | Out-Null }
           } else { $iscc = (Get-Command iscc).Source }
           $iscc = if (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe") { "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" } else { (Get-Command iscc).Source }
-          & $iscc /Q /DAppVersion=0.2.${{ github.run_number }} installer\pero.iss
+          & $iscc /Q /DAppVersion=0.3.${{ github.run_number }} installer\pero.iss
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          Get-ChildItem artifacts\Pero-Setup-*.exe
+          Get-ChildItem artifacts\RilvoWrite-Setup-*.exe
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Pero-Setup
-          path: artifacts/Pero-Setup-*.exe
+          name: RilvoWrite-Setup
+          path: artifacts/RilvoWrite-Setup-*.exe
 
       - name: Screen 1920x1080
         shell: pwsh
@@ -85,7 +85,7 @@ jobs:
       - name: Lab — ядро на корпусе, зависимости (AC-07), UI-прогон
         continue-on-error: true
         timeout-minutes: 40
-        run: dotnet run --project tools/Pero.Lab -c Release -- all samples/docx artifacts/Pero/Pero.exe ci-out
+        run: dotnet run --project tools/Pero.Lab -c Release -- all samples/docx artifacts/Pero/RilvoWrite.exe ci-out
 
       - name: Results → ветка ci-results
         if: always()

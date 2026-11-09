@@ -59,7 +59,7 @@ public sealed class UiRun(string exe, string samples, string outDir, Action<stri
                 WaitTitle(s.Window, sample);
                 Thread.Sleep(1500);
                 Shot("ui-open-" + sample);
-                Check(s.Window.Title.Contains("Перо"), "заголовок");
+                Check(s.Window.Title.Contains("Rilvo Write"), "заголовок");
             });
 
         Scenario("readonly-unsupported", () =>
@@ -429,11 +429,11 @@ public sealed class UiRun(string exe, string samples, string outDir, Action<stri
         while (sw.Elapsed < TimeSpan.FromSeconds(60))
         {
             var w = _auto.GetDesktop().FindAllChildren(cf => cf.ByProcessId(app.ProcessId))
-                .FirstOrDefault(e => (e.Name ?? "").EndsWith(" — Перо", StringComparison.Ordinal) && e.ControlType == FlaUI.Core.Definitions.ControlType.Window);
+                .FirstOrDefault(e => (e.Name ?? "").EndsWith(" — Rilvo Write", StringComparison.Ordinal) && e.ControlType == FlaUI.Core.Definitions.ControlType.Window);
             if (w is not null) { _coldStart ??= sw.ElapsedMilliseconds; return w.AsWindow(); }
             Thread.Sleep(200);
         }
-        throw new TimeoutException("главное окно «Перо» не появилось");
+        throw new TimeoutException("главное окно Rilvo Write не появилось");
     }
 
     private string Copy(string sample)

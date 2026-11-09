@@ -135,7 +135,7 @@ public sealed partial class EditorWindow
         // Справка
         C("Горячие клавиши", "F1", ShowShortcuts);
         C("О программе", null, () => MessageBox.Show(this,
-            $"«Перо», версия {typeof(App).Assembly.GetName().Version}\n\nРедактор документов Word (DOCX) с собственным ядром: модель документа, правка, разметка страниц, " +
+            $"Rilvo Write, версия {typeof(App).Assembly.GetName().Version}\n\nРедактор документов Word (DOCX) с собственным ядром: модель документа, правка, разметка страниц, " +
             "чтение и запись DOCX, печать и PDF. Без коммерческих библиотек, лицензионных ключей и подключения к интернету.",
             "О программе", MessageBoxButton.OK, MessageBoxImage.Information));
     }

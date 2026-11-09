@@ -1,4 +1,4 @@
-«Перо» — сторонние компоненты в составе приложения
+Rilvo Write — сторонние компоненты в составе приложения
 
 Приложение использует только платформу .NET 8 (среда выполнения и WPF):
   .NET Runtime, Windows Desktop Runtime — © .NET Foundation and Contributors, лицензия MIT
