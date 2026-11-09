@@ -6,11 +6,11 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Pero</RootNamespace>
-    <AssemblyName>RilvoWrite</AssemblyName>
+    <AssemblyName>RWrite</AssemblyName>
     <ApplicationIcon>Assets\rilvo.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <Product>Rilvo Write</Product>
-    <AssemblyTitle>Rilvo Write</AssemblyTitle>
+    <Product>RWrite</Product>
+    <AssemblyTitle>RWrite</AssemblyTitle>
     <Company>Aleksandr Katilov</Company>
     <Version>0.3.0</Version>
     <SatelliteResourceLanguages>ru</SatelliteResourceLanguages>

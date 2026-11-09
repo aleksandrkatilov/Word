@@ -132,7 +132,7 @@ public sealed partial class EditorWindow : Window
     {
         var bi = new System.Windows.Media.Imaging.BitmapImage();
         bi.BeginInit();
-        bi.UriSource = new Uri($"pack://application:,,,/RilvoWrite;component/Assets/rilvo-{(size <= 64 ? 64 : 256)}.png", UriKind.Absolute);
+        bi.UriSource = new Uri($"pack://application:,,,/RWrite;component/Assets/rilvo-{(size <= 64 ? 64 : 256)}.png", UriKind.Absolute);
         bi.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
         bi.EndInit();
         bi.Freeze();
@@ -352,8 +352,8 @@ public sealed partial class EditorWindow : Window
     }
 
     private string ReadOnlyReason() =>
-        _lockedElsewhere ? "Файл уже открыт в другом окне Rilvo Write. Здесь он открыт только для чтения — изменения можно сохранить копией."
-        : _compatReadOnly ? "Только чтение: в документе есть содержимое, которое Rilvo Write пока не умеет править безопасно (" + (_report?.ToUserText() ?? "") + "). Исходный файл не изменяется; можно сохранить копию."
+        _lockedElsewhere ? "Файл уже открыт в другом окне RWrite. Здесь он открыт только для чтения — изменения можно сохранить копией."
+        : _compatReadOnly ? "Только чтение: в документе есть содержимое, которое RWrite пока не умеет править безопасно (" + (_report?.ToUserText() ?? "") + "). Исходный файл не изменяется; можно сохранить копию."
         : "Документ открыт только для чтения.";
 
     private void ShowOpenMessages(bool recovered, Doc.Model.Document doc)

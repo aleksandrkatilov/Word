@@ -1,4 +1,4 @@
-; Установщик Rilvo Write (Inno Setup 6). Сборка: iscc /DAppVersion=0.3.0 /DSourceDir=..\artifacts\Pero installer\pero.iss
+; Установщик RWrite (Inno Setup 6). Сборка: iscc /DAppVersion=0.3.0 /DSourceDir=..\artifacts\Pero installer\pero.iss
 ; Настройки (%APPDATA%\Pero), резервные версии и копии восстановления (%LOCALAPPDATA%\Pero) не удаляются
 ; при обновлении и деинсталляции. AppId прежний — установка обновляет ранее установленное «Перо».
 
@@ -8,8 +8,8 @@
 #ifndef SourceDir
   #define SourceDir "..\artifacts\Pero"
 #endif
-#define AppTitle "Rilvo Write"
-#define AppExe "RilvoWrite.exe"
+#define AppTitle "RWrite"
+#define AppExe "RWrite.exe"
 
 [Setup]
 AppId={{6F1D3A52-6C2B-4E8C-9E0B-5C7A2B1F9D41}
@@ -19,7 +19,7 @@ AppVerName={#AppTitle} {#AppVersion}
 AppPublisher=Aleksandr Katilov
 VersionInfoProductName={#AppTitle}
 VersionInfoDescription={#AppTitle} — установщик
-DefaultDirName={autopf}\Rilvo Write
+DefaultDirName={autopf}\RWrite
 DefaultGroupName={#AppTitle}
 DisableProgramGroupPage=yes
 UninstallDisplayName={#AppTitle}
@@ -33,7 +33,7 @@ MinVersion=10.0.17763
 PrivilegesRequiredOverridesAllowed=dialog
 CloseApplications=yes
 OutputDir=..\artifacts
-OutputBaseFilename=RilvoWrite-Setup-{#AppVersion}
+OutputBaseFilename=RWrite-Setup-{#AppVersion}
 Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
@@ -46,11 +46,14 @@ Name: "en"; MessagesFile: "compiler:Default.isl"
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
 ; Ассоциация не включена по умолчанию, чтобы не перехватывать .docx у Word без согласия пользователя
-Name: "assocdocx"; Description: "Открывать файлы .docx в Rilvo Write"; GroupDescription: "Ассоциации:"; Flags: unchecked
+Name: "assocdocx"; Description: "Открывать файлы .docx в RWrite"; GroupDescription: "Ассоциации:"; Flags: unchecked
 
 [InstallDelete]
 ; файлы прежней версии под старым именем
 Type: files; Name: "{app}\Pero.exe"
+Type: files; Name: "{app}\RilvoWrite.*"
+Type: files; Name: "{group}\Rilvo Write.lnk"
+Type: files; Name: "{autodesktop}\Rilvo Write.lnk"
 Type: files; Name: "{app}\Pero.dll"
 Type: files; Name: "{app}\Pero.pdb"
 Type: files; Name: "{app}\Pero.deps.json"
@@ -67,15 +70,18 @@ Name: "{group}\{cm:UninstallProgram,{#AppTitle}}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#AppTitle}"; Filename: "{app}\{#AppExe}"; Tasks: desktopicon
 
 [Registry]
-Root: HKA; Subkey: "Software\Classes\RilvoWrite.Document"; ValueType: string; ValueName: ""; ValueData: "Документ Word (Rilvo Write)"; Flags: uninsdeletekey; Tasks: assocdocx
-Root: HKA; Subkey: "Software\Classes\RilvoWrite.Document\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\{#AppExe},0"; Tasks: assocdocx
-Root: HKA; Subkey: "Software\Classes\RilvoWrite.Document\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#AppExe}"" ""%1"""; Tasks: assocdocx
-Root: HKA; Subkey: "Software\Classes\.docx\OpenWithProgids"; ValueType: string; ValueName: "RilvoWrite.Document"; ValueData: ""; Flags: uninsdeletevalue; Tasks: assocdocx
+Root: HKA; Subkey: "Software\Classes\RWrite.Document"; ValueType: string; ValueName: ""; ValueData: "Документ Word (RWrite)"; Flags: uninsdeletekey; Tasks: assocdocx
+Root: HKA; Subkey: "Software\Classes\RWrite.Document\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\{#AppExe},0"; Tasks: assocdocx
+Root: HKA; Subkey: "Software\Classes\RWrite.Document\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#AppExe}"" ""%1"""; Tasks: assocdocx
+Root: HKA; Subkey: "Software\Classes\.docx\OpenWithProgids"; ValueType: string; ValueName: "RWrite.Document"; ValueData: ""; Flags: uninsdeletevalue; Tasks: assocdocx
 Root: HKA; Subkey: "Software\Classes\Applications\{#AppExe}"; ValueType: string; ValueName: "FriendlyAppName"; ValueData: "{#AppTitle}"; Flags: uninsdeletekey
 Root: HKA; Subkey: "Software\Classes\Applications\{#AppExe}\SupportedTypes"; ValueType: string; ValueName: ".docx"; ValueData: ""; Flags: uninsdeletekey
 ; старая регистрация «Пера»
 Root: HKA; Subkey: "Software\Classes\Pero.Document"; Flags: deletekey
 Root: HKA; Subkey: "Software\Classes\Applications\Pero.exe"; Flags: deletekey
+Root: HKA; Subkey: "Software\Classes\RilvoWrite.Document"; Flags: deletekey
+Root: HKA; Subkey: "Software\Classes\Applications\RilvoWrite.exe"; Flags: deletekey
+Root: HKA; Subkey: "Software\Classes\.docx\OpenWithProgids"; ValueType: none; ValueName: "RilvoWrite.Document"; Flags: deletevalue
 Root: HKA; Subkey: "Software\Classes\.docx\OpenWithProgids"; ValueType: none; ValueName: "Pero.Document"; Flags: deletevalue
 
 [Run]
