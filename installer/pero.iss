@@ -37,11 +37,14 @@ OutputBaseFilename=RWrite-Setup-{#AppVersion}
 Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
+LanguageDetectionMethod=none
+ShowLanguageDialog=yes
 ChangesAssociations=yes
 
 [Languages]
-Name: "ru"; MessagesFile: "compiler:Languages\Russian.isl"
+; английский — по умолчанию (как и язык самой программы), русский выбирается в списке
 Name: "en"; MessagesFile: "compiler:Default.isl"
+Name: "ru"; MessagesFile: "compiler:Languages\Russian.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"

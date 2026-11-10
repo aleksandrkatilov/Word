@@ -38,24 +38,24 @@ public sealed class InspectionReport
         switch (Status)
         {
             case InspectionStatus.Rejected:
-                sb.AppendLine($"Файл не может быть открыт: {RejectReason}");
+                sb.AppendLine(Loc.F("Файл не может быть открыт: {0}", RejectReason));
                 return sb.ToString();
             case InspectionStatus.ReadOnlyRecommended:
-                sb.AppendLine("Документ содержит конструкции, которые редактор пока не сохраняет без потерь.");
-                sb.AppendLine("Он открыт только для чтения, исходный файл не изменяется.");
-                sb.AppendLine("Можно сохранить преобразованную копию под другим именем.");
+                sb.AppendLine(Loc.L("Документ содержит конструкции, которые редактор пока не сохраняет без потерь."));
+                sb.AppendLine(Loc.L("Он открыт только для чтения, исходный файл не изменяется."));
+                sb.AppendLine(Loc.L("Можно сохранить преобразованную копию под другим именем."));
                 break;
             case InspectionStatus.OkWithWarnings:
-                sb.AppendLine("Часть оформления поддерживается частично и может измениться при сохранении.");
+                sb.AppendLine(Loc.L("Часть оформления поддерживается частично и может измениться при сохранении."));
                 break;
             default:
-                sb.AppendLine("Все найденные конструкции поддерживаются.");
+                sb.AppendLine(Loc.L("Все найденные конструкции поддерживаются."));
                 break;
         }
         foreach (var f in Risks)
-            sb.AppendLine($"  ✗ {f.Entry.Title} — {f.Count} шт.{(f.Detail is null ? "" : $" ({f.Detail})")} — будет потеряно");
+            sb.AppendLine(Loc.F("  ✗ {0} — {1} шт.{2} — будет потеряно", f.Entry.Title, f.Count, (f.Detail is null ? "" : $" ({f.Detail})")));
         foreach (var f in Warnings)
-            sb.AppendLine($"  ⚠ {f.Entry.Title} — {f.Count} шт. — частично");
+            sb.AppendLine(Loc.F("  ⚠ {0} — {1} шт. — частично", f.Entry.Title, f.Count));
         return sb.ToString();
     }
 }
@@ -90,11 +90,11 @@ public sealed class PackageInspector(CompatibilityRegistry registry, PackageLimi
             InspectStream(fs, report);
         }
         catch (PackageRejectedException ex) { Reject(report, ex.Message); }
-        catch (InvalidDataException) { Reject(report, "файл повреждён или не является документом DOCX."); }
-        catch (XmlException ex) { Reject(report, $"повреждённый XML в пакете ({ex.Message})."); }
-        catch (UnauthorizedAccessException) { Reject(report, "нет доступа к файлу."); }
-        catch (FileNotFoundException) { Reject(report, "файл не найден."); }
-        catch (IOException ex) { Reject(report, $"ошибка чтения ({ex.Message})."); }
+        catch (InvalidDataException) { Reject(report, Loc.L("файл повреждён или не является документом DOCX.")); }
+        catch (XmlException ex) { Reject(report, Loc.F("повреждённый XML в пакете ({0}).", ex.Message)); }
+        catch (UnauthorizedAccessException) { Reject(report, Loc.L("нет доступа к файлу.")); }
+        catch (FileNotFoundException) { Reject(report, Loc.L("файл не найден.")); }
+        catch (IOException ex) { Reject(report, Loc.F("ошибка чтения ({0}).", ex.Message)); }
         return report;
     }
 
@@ -103,8 +103,8 @@ public sealed class PackageInspector(CompatibilityRegistry registry, PackageLimi
         var report = new InspectionReport { Path = displayName };
         try { InspectStream(stream, report); }
         catch (PackageRejectedException ex) { Reject(report, ex.Message); }
-        catch (InvalidDataException) { Reject(report, "файл повреждён или не является документом DOCX."); }
-        catch (XmlException ex) { Reject(report, $"повреждённый XML в пакете ({ex.Message})."); }
+        catch (InvalidDataException) { Reject(report, Loc.L("файл повреждён или не является документом DOCX.")); }
+        catch (XmlException ex) { Reject(report, Loc.F("повреждённый XML в пакете ({0}).", ex.Message)); }
         return report;
     }
 
@@ -122,10 +122,10 @@ public sealed class PackageInspector(CompatibilityRegistry registry, PackageLimi
         {
             report.IsPasswordProtectedOrLegacy = true;
             throw new PackageRejectedException(
-                "документ защищён паролем или сохранён в старом формате DOC. Редактирование таких файлов появится в расширенной версии.");
+                Loc.L("документ защищён паролем или сохранён в старом формате DOC. Редактирование таких файлов появится в расширенной версии."));
         }
         if (read < 4 || head[0] != 'P' || head[1] != 'K')
-            throw new PackageRejectedException("файл повреждён или не является документом DOCX.");
+            throw new PackageRejectedException(Loc.L("файл повреждён или не является документом DOCX."));
         stream.Position = 0;
 
         using var zip = new ZipArchive(stream, ZipArchiveMode.Read, leaveOpen: true);
@@ -173,7 +173,7 @@ public sealed class PackageInspector(CompatibilityRegistry registry, PackageLimi
     {
         var entries = zip.Entries;
         if (entries.Count > _limits.MaxEntries)
-            throw new PackageRejectedException($"пакет содержит {entries.Count} частей, допустимо не более {_limits.MaxEntries}.");
+            throw new PackageRejectedException(Loc.F("пакет содержит {0} частей, допустимо не более {1}.", entries.Count, _limits.MaxEntries));
 
         var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         long declared = 0;
@@ -182,16 +182,16 @@ public sealed class PackageInspector(CompatibilityRegistry registry, PackageLimi
             string n = e.FullName;
             if (n.Length == 0 || n.StartsWith('/') || n.StartsWith('\\') || n.Contains('\\') || n.Contains(':') ||
                 n.Split('/').Any(seg => seg == ".." || seg == "."))
-                throw new PackageRejectedException($"недопустимый путь части пакета: «{n}».");
+                throw new PackageRejectedException(Loc.F("недопустимый путь части пакета: «{0}».", n));
             if (!names.Add(n))
-                throw new PackageRejectedException($"дублирующееся имя части пакета: «{n}».");
+                throw new PackageRejectedException(Loc.F("дублирующееся имя части пакета: «{0}».", n));
 
             declared += e.Length;
             if (declared > _limits.MaxTotalUncompressedBytes)
-                throw new PackageRejectedException($"распакованный объём превышает {_limits.MaxTotalUncompressedBytes / (1024 * 1024)} МБ.");
+                throw new PackageRejectedException(Loc.F("распакованный объём превышает {0} МБ.", _limits.MaxTotalUncompressedBytes / (1024 * 1024)));
             if (e.Length > _limits.RatioCheckThresholdBytes && e.CompressedLength > 0 &&
                 (double)e.Length / e.CompressedLength > _limits.MaxCompressionRatio)
-                throw new PackageRejectedException($"подозрительно высокий коэффициент сжатия части «{n}».");
+                throw new PackageRejectedException(Loc.F("подозрительно высокий коэффициент сжатия части «{0}».", n));
         }
         report.PartCount = entries.Count;
         report.UncompressedBytes = declared;
@@ -215,7 +215,7 @@ public sealed class PackageInspector(CompatibilityRegistry registry, PackageLimi
     private static ContentTypeMap ReadContentTypes(ZipArchive zip, DecompressionBudget budget)
     {
         var entry = zip.GetEntry("[Content_Types].xml")
-            ?? throw new PackageRejectedException("в пакете нет [Content_Types].xml — это не документ DOCX.");
+            ?? throw new PackageRejectedException(Loc.L("в пакете нет [Content_Types].xml — это не документ DOCX."));
         var map = new ContentTypeMap();
         using var s = OpenBounded(entry, budget);
         using var r = SafeXml.Create(s, 16 * 1024 * 1024);
@@ -232,7 +232,7 @@ public sealed class PackageInspector(CompatibilityRegistry registry, PackageLimi
 
     private static string FindMainPart(ZipArchive zip, DecompressionBudget budget)
     {
-        var rels = zip.GetEntry("_rels/.rels") ?? throw new PackageRejectedException("в пакете нет _rels/.rels.");
+        var rels = zip.GetEntry("_rels/.rels") ?? throw new PackageRejectedException(Loc.L("в пакете нет _rels/.rels."));
         using var s = OpenBounded(rels, budget);
         using var r = SafeXml.Create(s, 16 * 1024 * 1024);
         while (r.Read())
@@ -241,14 +241,14 @@ public sealed class PackageInspector(CompatibilityRegistry registry, PackageLimi
                 r.GetAttribute("Type") == OfficeDocRel)
             {
                 if (string.Equals(r.GetAttribute("TargetMode"), "External", StringComparison.OrdinalIgnoreCase))
-                    throw new PackageRejectedException("основная часть документа указывает на внешний ресурс.");
+                    throw new PackageRejectedException(Loc.L("основная часть документа указывает на внешний ресурс."));
                 string target = (r.GetAttribute("Target") ?? "").TrimStart('/');
                 if (zip.GetEntry(target) is null)
-                    throw new PackageRejectedException("в пакете отсутствует основная часть документа.");
+                    throw new PackageRejectedException(Loc.L("в пакете отсутствует основная часть документа."));
                 return "/" + target;
             }
         }
-        throw new PackageRejectedException("в пакете не найдена основная часть документа.");
+        throw new PackageRejectedException(Loc.L("в пакете не найдена основная часть документа."));
     }
 
     private static bool IsScannablePart(string ct) =>

@@ -15,6 +15,9 @@
     <Version>0.3.0</Version>
     <SatelliteResourceLanguages>ru</SatelliteResourceLanguages>
   </PropertyGroup>
+  <ItemGroup>
+    <Using Include="Pero.Core.Text" />
+  </ItemGroup>
 
   <ItemGroup>
     <Content Include="THIRD-PARTY-NOTICES.txt" CopyToOutputDirectory="PreserveNewest" />

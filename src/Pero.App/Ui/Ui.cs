@@ -208,10 +208,10 @@ public static class Theme
     /// <summary>Цвета маркера, доступные в Word (w:highlight).</summary>
     public static readonly (string Name, string Hex, string Title)[] HighlightColors =
     [
-        ("yellow", "FFFF00", "Жёлтый"), ("green", "00FF00", "Ярко-зелёный"), ("cyan", "00FFFF", "Бирюзовый"), ("magenta", "FF00FF", "Розовый"),
-        ("blue", "0000FF", "Синий"), ("red", "FF0000", "Красный"), ("darkBlue", "00008B", "Тёмно-синий"), ("darkCyan", "008B8B", "Сине-зелёный"),
-        ("darkGreen", "006400", "Зелёный"), ("darkMagenta", "8B008B", "Фиолетовый"), ("darkRed", "8B0000", "Тёмно-красный"), ("darkYellow", "808000", "Коричнево-жёлтый"),
-        ("darkGray", "A9A9A9", "Серый 50%"), ("lightGray", "D3D3D3", "Серый 25%"), ("black", "000000", "Чёрный"),
+        ("yellow", "FFFF00", Loc.L("Жёлтый")), ("green", "00FF00", Loc.L("Ярко-зелёный")), ("cyan", "00FFFF", Loc.L("Бирюзовый")), ("magenta", "FF00FF", Loc.L("Розовый")),
+        ("blue", "0000FF", Loc.L("Синий")), ("red", "FF0000", Loc.L("Красный")), ("darkBlue", "00008B", Loc.L("Тёмно-синий")), ("darkCyan", "008B8B", Loc.L("Сине-зелёный")),
+        ("darkGreen", "006400", Loc.L("Зелёный")), ("darkMagenta", "8B008B", Loc.L("Фиолетовый")), ("darkRed", "8B0000", Loc.L("Тёмно-красный")), ("darkYellow", "808000", Loc.L("Коричнево-жёлтый")),
+        ("darkGray", "A9A9A9", Loc.L("Серый 50%")), ("lightGray", "D3D3D3", Loc.L("Серый 25%")), ("black", "000000", Loc.L("Чёрный")),
     ];
 
     public static Color Hex(string hex) => Color.FromRgb(Convert.ToByte(hex[..2], 16), Convert.ToByte(hex[2..4], 16), Convert.ToByte(hex[4..], 16));

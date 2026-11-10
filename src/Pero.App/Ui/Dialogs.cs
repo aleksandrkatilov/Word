@@ -29,8 +29,8 @@ public class FormDialog : Window
         _grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 220 });
         var root = new DockPanel();
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(16, 4, 16, 14) };
-        var ok = new Button { Content = "ОК", IsDefault = true, MinWidth = 84, Height = 28, Margin = new Thickness(0, 0, 8, 0) };
-        var cancel = new Button { Content = "Отмена", IsCancel = true, MinWidth = 84, Height = 28 };
+        var ok = new Button { Content = Loc.L("ОК"), IsDefault = true, MinWidth = 84, Height = 28, Margin = new Thickness(0, 0, 8, 0) };
+        var cancel = new Button { Content = Loc.L("Отмена"), IsCancel = true, MinWidth = 84, Height = 28 };
         ok.Click += (_, _) =>
         {
             if (Validate() is { } problem) { MessageBox.Show(this, problem, Title, MessageBoxButton.OK, MessageBoxImage.Information); return; }
@@ -83,19 +83,19 @@ public sealed class LinkDialog : FormDialog
     public string Url => _url.Text.Trim();
     public string? LinkText => _text.Text.Length == 0 ? null : _text.Text;
 
-    public LinkDialog(Window owner, string? text, string? url, bool textEditable) : base(owner, "Ссылка")
+    public LinkDialog(Window owner, string? text, string? url, bool textEditable) : base(owner, Loc.L("Ссылка"))
     {
-        _text = AddRow("Текст:", Box(text ?? "", 300));
+        _text = AddRow(Loc.L("Текст:"), Box(text ?? "", 300));
         _text.IsEnabled = textEditable;
-        _url = AddRow("Адрес:", Box(url ?? "https://", 300));
-        AddNote("Ссылки открываются по Ctrl+щелчку. Разрешены адреса http, https и mailto.");
+        _url = AddRow(Loc.L("Адрес:"), Box(url ?? "https://", 300));
+        AddNote(Loc.L("Ссылки открываются по Ctrl+щелчку. Разрешены адреса http, https и mailto."));
         Loaded += (_, _) => { _url.Focus(); _url.SelectAll(); };
     }
 
     protected override string? Validate()
     {
         var (decision, _, reason) = Pero.Core.Security.LinkPolicy.Evaluate(Url);
-        return decision == Pero.Core.Security.LinkDecision.Block ? "Адрес не подходит: " + reason + "." : null;
+        return decision == Pero.Core.Security.LinkDecision.Block ? Loc.L("Адрес не подходит: ") + reason + "." : null;
     }
 }
 
@@ -106,16 +106,16 @@ public sealed class TableDialog : FormDialog
     public int RowsCount => int.Parse(_rows.Text);
     public int Cols => int.Parse(_cols.Text);
 
-    public TableDialog(Window owner) : base(owner, "Вставить таблицу")
+    public TableDialog(Window owner) : base(owner, Loc.L("Вставить таблицу"))
     {
-        _rows = AddRow("Строк:", Box("3", 80));
-        _cols = AddRow("Столбцов:", Box("3", 80));
+        _rows = AddRow(Loc.L("Строк:"), Box("3", 80));
+        _cols = AddRow(Loc.L("Столбцов:"), Box("3", 80));
         Loaded += (_, _) => { _rows.Focus(); _rows.SelectAll(); };
     }
 
     protected override string? Validate() =>
-        !int.TryParse(_rows.Text, out int r) || r is < 1 or > 100 ? "Число строк — от 1 до 100."
-        : !int.TryParse(_cols.Text, out int c) || c is < 1 or > 30 ? "Число столбцов — от 1 до 30."
+        !int.TryParse(_rows.Text, out int r) || r is < 1 or > 100 ? Loc.L("Число строк — от 1 до 100.")
+        : !int.TryParse(_cols.Text, out int c) || c is < 1 or > 30 ? Loc.L("Число столбцов — от 1 до 30.")
         : null;
 }
 
@@ -135,24 +135,24 @@ public sealed class PageSetupDialog : FormDialog
 
     private static int Tw(string s) => TryNum(s, out double v) ? (int)Math.Round(v * TwPerCm) : 0;
 
-    public PageSetupDialog(Window owner, SectionProps s) : base(owner, "Параметры страницы")
+    public PageSetupDialog(Window owner, SectionProps s) : base(owner, Loc.L("Параметры страницы"))
     {
-        _size.Items.Add("A4 (21 × 29,7 см)");
-        _size.Items.Add("Letter (21,59 × 27,94 см)");
+        _size.Items.Add(Loc.L("A4 (21 × 29,7 см)"));
+        _size.Items.Add(Loc.L("Letter (21,59 × 27,94 см)"));
         int w = Math.Min(s.PageWidth, s.PageHeight), h = Math.Max(s.PageWidth, s.PageHeight);
         bool letter = Math.Abs(w - 12240) < 60 && Math.Abs(h - 15840) < 60;
         bool a4 = Math.Abs(w - 11906) < 60 && Math.Abs(h - 16838) < 60;
-        if (!letter && !a4) _size.Items.Add($"Текущий ({Num(w / TwPerCm)} × {Num(h / TwPerCm)} см)");
+        if (!letter && !a4) _size.Items.Add(Loc.F("Текущий ({0} × {1} см)", Num(w / TwPerCm), Num(h / TwPerCm)));
         _size.SelectedIndex = letter ? 1 : a4 ? 0 : 2;
-        _orient.Items.Add("Книжная");
-        _orient.Items.Add("Альбомная");
+        _orient.Items.Add(Loc.L("Книжная"));
+        _orient.Items.Add(Loc.L("Альбомная"));
         _orient.SelectedIndex = s.Orientation == Pero.Doc.Model.Orientation.Landscape ? 1 : 0;
-        AddRow("Размер бумаги:", _size);
-        AddRow("Ориентация:", _orient);
-        _top = AddRow("Верхнее поле, см:", Box(Num(s.MarginTop / TwPerCm), 80));
-        _bottom = AddRow("Нижнее поле, см:", Box(Num(s.MarginBottom / TwPerCm), 80));
-        _left = AddRow("Левое поле, см:", Box(Num(s.MarginLeft / TwPerCm), 80));
-        _right = AddRow("Правое поле, см:", Box(Num(s.MarginRight / TwPerCm), 80));
+        AddRow(Loc.L("Размер бумаги:"), _size);
+        AddRow(Loc.L("Ориентация:"), _orient);
+        _top = AddRow(Loc.L("Верхнее поле, см:"), Box(Num(s.MarginTop / TwPerCm), 80));
+        _bottom = AddRow(Loc.L("Нижнее поле, см:"), Box(Num(s.MarginBottom / TwPerCm), 80));
+        _left = AddRow(Loc.L("Левое поле, см:"), Box(Num(s.MarginLeft / TwPerCm), 80));
+        _right = AddRow(Loc.L("Правое поле, см:"), Box(Num(s.MarginRight / TwPerCm), 80));
         PaperPortrait = (w, h);
         _size.SelectionChanged += (_, _) => PaperPortrait = _size.SelectedIndex switch { 0 => (11906, 16838), 1 => (12240, 15840), _ => (w, h) };
     }
@@ -160,9 +160,9 @@ public sealed class PageSetupDialog : FormDialog
     protected override string? Validate()
     {
         foreach (var b in new[] { _top, _bottom, _left, _right })
-            if (!TryNum(b.Text, out double v) || v < 0 || v > 20) return "Поля — числа от 0 до 20 см.";
+            if (!TryNum(b.Text, out double v) || v < 0 || v > 20) return Loc.L("Поля — числа от 0 до 20 см.");
         var (pw, ph) = Orientation == Pero.Doc.Model.Orientation.Landscape ? (PaperPortrait.H, PaperPortrait.W) : PaperPortrait;
-        if (MarginLeftTw + MarginRightTw > pw - 1440 || MarginTopTw + MarginBottomTw > ph - 1440) return "Поля не помещаются на странице.";
+        if (MarginLeftTw + MarginRightTw > pw - 1440 || MarginTopTw + MarginBottomTw > ph - 1440) return Loc.L("Поля не помещаются на странице.");
         return null;
     }
 }
@@ -184,27 +184,27 @@ public sealed class ParagraphDialog : FormDialog
 
     private static double N(string s) => TryNum(s, out double v) ? v : 0;
 
-    public ParagraphDialog(Window owner, EffectivePara p) : base(owner, "Абзац")
+    public ParagraphDialog(Window owner, EffectivePara p) : base(owner, Loc.L("Абзац"))
     {
-        foreach (var a in new[] { "По левому краю", "По центру", "По правому краю", "По ширине" }) _align.Items.Add(a);
+        foreach (var a in new[] { Loc.L("По левому краю"), Loc.L("По центру"), Loc.L("По правому краю"), Loc.L("По ширине") }) _align.Items.Add(a);
         _align.SelectedIndex = (int)p.Align;
-        AddRow("Выравнивание:", _align);
-        _left = AddRow("Отступ слева, см:", Box(Num(p.IndLeft / TwPerCm), 80));
-        _right = AddRow("Отступ справа, см:", Box(Num(p.IndRight / TwPerCm), 80));
-        _first = AddRow("Первая строка, см:", Box(Num(p.IndFirst / TwPerCm), 80));
-        _before = AddRow("Интервал перед, пт:", Box(Num(p.SpaceBefore / 20.0), 80));
-        _after = AddRow("Интервал после, пт:", Box(Num(p.SpaceAfter / 20.0), 80));
+        AddRow(Loc.L("Выравнивание:"), _align);
+        _left = AddRow(Loc.L("Отступ слева, см:"), Box(Num(p.IndLeft / TwPerCm), 80));
+        _right = AddRow(Loc.L("Отступ справа, см:"), Box(Num(p.IndRight / TwPerCm), 80));
+        _first = AddRow(Loc.L("Первая строка, см:"), Box(Num(p.IndFirst / TwPerCm), 80));
+        _before = AddRow(Loc.L("Интервал перед, пт:"), Box(Num(p.SpaceBefore / 20.0), 80));
+        _after = AddRow(Loc.L("Интервал после, пт:"), Box(Num(p.SpaceAfter / 20.0), 80));
         foreach (var v in new[] { "1", "1,15", "1,5", "2" }) _line.Items.Add(v);
         _line.Text = p.LineRule == LineRule.Auto ? Num(p.Line / 240.0) : "1";
-        AddRow("Межстрочный (множитель):", _line);
-        AddNote("Отрицательное значение первой строки — выступ.");
+        AddRow(Loc.L("Межстрочный (множитель):"), _line);
+        AddNote(Loc.L("Отрицательное значение первой строки — выступ."));
     }
 
     protected override string? Validate()
     {
-        foreach (var b in new[] { _left, _right, _first }) if (!TryNum(b.Text, out double v) || Math.Abs(v) > 30) return "Отступы — числа от −30 до 30 см.";
-        foreach (var b in new[] { _before, _after }) if (!TryNum(b.Text, out double v) || v < 0 || v > 500) return "Интервалы — от 0 до 500 пт.";
-        if (!TryNum(_line.Text, out double l) || l < 0.5 || l > 10) return "Межстрочный интервал — от 0,5 до 10.";
+        foreach (var b in new[] { _left, _right, _first }) if (!TryNum(b.Text, out double v) || Math.Abs(v) > 30) return Loc.L("Отступы — числа от −30 до 30 см.");
+        foreach (var b in new[] { _before, _after }) if (!TryNum(b.Text, out double v) || v < 0 || v > 500) return Loc.L("Интервалы — от 0 до 500 пт.");
+        if (!TryNum(_line.Text, out double l) || l < 0.5 || l > 10) return Loc.L("Межстрочный интервал — от 0,5 до 10.");
         return null;
     }
 }
@@ -214,7 +214,7 @@ public sealed class FontDialog : FormDialog
 {
     private readonly ComboBox _family = new() { Height = 26, IsEditable = true, MaxDropDownHeight = 320 };
     private readonly TextBox _size;
-    private readonly CheckBox _bold = new() { Content = "Полужирный" }, _italic = new() { Content = "Курсив" }, _underline = new() { Content = "Подчёркнутый" }, _strike = new() { Content = "Зачёркнутый" };
+    private readonly CheckBox _bold = new() { Content = Loc.L("Полужирный") }, _italic = new() { Content = Loc.L("Курсив") }, _underline = new() { Content = Loc.L("Подчёркнутый") }, _strike = new() { Content = Loc.L("Зачёркнутый") };
     public string Family => _family.Text.Trim();
     public double SizePt => TryNum(_size.Text, out double v) ? v : 0;
     public bool? Bold => _bold.IsChecked;
@@ -222,21 +222,21 @@ public sealed class FontDialog : FormDialog
     public bool? Underline => _underline.IsChecked;
     public bool? Strike => _strike.IsChecked;
 
-    public FontDialog(Window owner, IEnumerable<string> families, Pero.Doc.Editing.FormatState st) : base(owner, "Шрифт")
+    public FontDialog(Window owner, IEnumerable<string> families, Pero.Doc.Editing.FormatState st) : base(owner, Loc.L("Шрифт"))
     {
         foreach (var f in families) _family.Items.Add(f);
         _family.Text = st.Font ?? "";
-        AddRow("Шрифт:", _family);
-        _size = AddRow("Размер, пт:", Box(st.SizePt is double s ? Num(s) : "", 80));
+        AddRow(Loc.L("Шрифт:"), _family);
+        _size = AddRow(Loc.L("Размер, пт:"), Box(st.SizePt is double s ? Num(s) : "", 80));
         foreach (var c in new[] { _bold, _italic, _underline, _strike }) c.IsThreeState = true;
         _bold.IsChecked = st.Bold; _italic.IsChecked = st.Italic; _underline.IsChecked = st.Underline; _strike.IsChecked = false;
         var panel = new WrapPanel();
         foreach (var c in new[] { _bold, _italic, _underline, _strike }) { c.Margin = new Thickness(0, 0, 14, 0); panel.Children.Add(c); }
-        AddRow("Начертание:", panel);
+        AddRow(Loc.L("Начертание:"), panel);
     }
 
     protected override string? Validate() =>
-        _size.Text.Trim().Length > 0 && (SizePt < 1 || SizePt > 1638) ? "Размер шрифта — от 1 до 1638 пт." : null;
+        _size.Text.Trim().Length > 0 && (SizePt < 1 || SizePt > 1638) ? Loc.L("Размер шрифта — от 1 до 1638 пт.") : null;
 }
 
 /// <summary>Окно с текстом (отчёты, горячие клавиши).</summary>

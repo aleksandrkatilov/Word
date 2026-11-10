@@ -17,13 +17,13 @@ public static class AtomicFileWriter
     public static void Write(string targetPath, Action<Stream> write, Func<string, string?>? validate = null)
     {
         string fullTarget = Path.GetFullPath(targetPath);
-        string dir = Path.GetDirectoryName(fullTarget) ?? throw new SaveFailedException("Некорректный путь сохранения.");
+        string dir = Path.GetDirectoryName(fullTarget) ?? throw new SaveFailedException(Loc.L("Некорректный путь сохранения."));
         string temp = Path.Combine(dir, $"~${Path.GetFileNameWithoutExtension(fullTarget)}.{Guid.NewGuid():N}.tmp");
 
         try
         {
             if (File.Exists(fullTarget) && new FileInfo(fullTarget).IsReadOnly)
-                throw new SaveFailedException("Файл доступен только для чтения. Сохраните копию под другим именем.");
+                throw new SaveFailedException(Loc.L("Файл доступен только для чтения. Сохраните копию под другим именем."));
 
             using (var fs = new FileStream(temp, FileMode.CreateNew, FileAccess.Write, FileShare.None, 1 << 16, FileOptions.WriteThrough))
             {
@@ -33,7 +33,7 @@ public static class AtomicFileWriter
             }
 
             if (validate?.Invoke(temp) is { } problem)
-                throw new SaveFailedException($"Сохранённый файл не прошёл проверку: {problem}. Исходный файл не изменён.");
+                throw new SaveFailedException(Loc.F("Сохранённый файл не прошёл проверку: {0}. Исходный файл не изменён.", problem));
 
             if (File.Exists(fullTarget))
                 File.Replace(temp, fullTarget, destinationBackupFileName: null, ignoreMetadataErrors: true);
@@ -49,22 +49,22 @@ public static class AtomicFileWriter
         catch (IOException ex) when (ex.HResult is ErrorDiskFull or ErrorHandleDiskFull || ex.Message.Contains("No space", StringComparison.OrdinalIgnoreCase))
         {
             TryDelete(temp);
-            throw new SaveFailedException("Недостаточно места на диске. Исходный файл не изменён.", ex);
+            throw new SaveFailedException(Loc.L("Недостаточно места на диске. Исходный файл не изменён."), ex);
         }
         catch (UnauthorizedAccessException ex)
         {
             TryDelete(temp);
-            throw new SaveFailedException("Нет прав на запись в эту папку. Исходный файл не изменён.", ex);
+            throw new SaveFailedException(Loc.L("Нет прав на запись в эту папку. Исходный файл не изменён."), ex);
         }
         catch (IOException ex)
         {
             TryDelete(temp);
-            throw new SaveFailedException($"Не удалось сохранить файл: {ex.Message}. Исходный файл не изменён.", ex);
+            throw new SaveFailedException(Loc.F("Не удалось сохранить файл: {0}. Исходный файл не изменён.", ex.Message), ex);
         }
         catch (Exception ex)
         {
             TryDelete(temp);
-            throw new SaveFailedException($"Ошибка при сохранении: {ex.Message}. Исходный файл не изменён.", ex);
+            throw new SaveFailedException(Loc.F("Ошибка при сохранении: {0}. Исходный файл не изменён.", ex.Message), ex);
         }
     }
 

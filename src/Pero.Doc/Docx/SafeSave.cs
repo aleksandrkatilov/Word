@@ -25,13 +25,13 @@ public static class SafeSave
         if (inspector is not null)
         {
             var report = inspector.Inspect(path);
-            if (report.Status == InspectionStatus.Rejected) return report.RejectReason ?? "файл не читается как DOCX";
+            if (report.Status == InspectionStatus.Rejected) return report.RejectReason ?? Loc.L("файл не читается как DOCX");
         }
         Model.Document reread;
         try { reread = DocxReader.Read(path); }
-        catch (Exception ex) { return "записанный файл не открывается: " + ex.Message; }
+        catch (Exception ex) { return Loc.L("записанный файл не открывается: ") + ex.Message; }
         var missing = originalParts.Where(p => !reread.Package.Parts.ContainsKey(p)).ToList();
-        if (missing.Count > 0) return "в файле пропали части документа: " + string.Join(", ", missing.Take(5));
+        if (missing.Count > 0) return Loc.L("в файле пропали части документа: ") + string.Join(", ", missing.Take(5));
         return expected.Compare(ModelDigest.Of(reread));
     }
 }
@@ -81,15 +81,15 @@ public sealed class ModelDigest
     public string? Compare(ModelDigest saved)
     {
         if (saved.Paragraphs.Count != Paragraphs.Count)
-            return $"число абзацев {saved.Paragraphs.Count} вместо {Paragraphs.Count}";
+            return Loc.F("число абзацев {0} вместо {1}", saved.Paragraphs.Count, Paragraphs.Count);
         for (int i = 0; i < Paragraphs.Count; i++)
             if (saved.Paragraphs[i] != Paragraphs[i])
-                return $"текст абзаца {i + 1} отличается («{Short(Paragraphs[i])}» → «{Short(saved.Paragraphs[i])}»)";
-        if (!saved.Tables.SequenceEqual(Tables)) return "таблицы или объединения ячеек отличаются";
-        if (!saved.Images.SequenceEqual(Images)) return "изображения отличаются";
-        if (!saved.Links.SequenceEqual(Links)) return "гиперссылки отличаются";
-        if (!saved.HeadersFooters.SequenceEqual(HeadersFooters)) return "колонтитулы отличаются";
-        if (saved.Page != Page) return "параметры страницы отличаются";
+                return Loc.F("текст абзаца {0} отличается («{1}» → «{2}»)", i + 1, Short(Paragraphs[i]), Short(saved.Paragraphs[i]));
+        if (!saved.Tables.SequenceEqual(Tables)) return Loc.L("таблицы или объединения ячеек отличаются");
+        if (!saved.Images.SequenceEqual(Images)) return Loc.L("изображения отличаются");
+        if (!saved.Links.SequenceEqual(Links)) return Loc.L("гиперссылки отличаются");
+        if (!saved.HeadersFooters.SequenceEqual(HeadersFooters)) return Loc.L("колонтитулы отличаются");
+        if (saved.Page != Page) return Loc.L("параметры страницы отличаются");
         return null;
     }
 

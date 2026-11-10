@@ -37,7 +37,7 @@ public static class Strings
     public static string RemoveFromList => T("Удалить из списка", "Remove from list");
     public static string RecentMissing => T("Файл не найден: {0}", "File not found: {0}");
     public static string OptLanguage => T("Язык интерфейса", "Display language");
-    public static string OptRestart => T("Язык изменится после перезапуска RWrite.", "The language changes after restarting Pero.");
+    public static string OptRestart => T("Язык изменится после перезапуска RWrite.", "The language changes after restarting RWrite.");
     public static string OptAutoRecover => T("Автовосстановление, секунд (10–600)", "AutoRecover interval, seconds (10–600)");
     public static string OptSpell => T("Проверять орфографию при вводе", "Check spelling as you type");
 

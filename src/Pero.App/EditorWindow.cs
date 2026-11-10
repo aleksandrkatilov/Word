@@ -76,7 +76,7 @@ public sealed partial class EditorWindow : Window
     {
         OpenWindows.Add(this);
         int n = ++_untitledCounter;
-        _displayName = n == 1 ? "Новый документ" : $"Новый документ {n}";
+        _displayName = n == 1 ? Loc.L("Новый документ") : Loc.F("Новый документ {0}", n);
         Title = Strings.AppName;
         Width = 1366;
         Height = 768;
@@ -92,7 +92,7 @@ public sealed partial class EditorWindow : Window
         if (OpenWindows.Count > 1) { Left = 40 + 24 * (OpenWindows.Count % 8); Top = 40 + 24 * (OpenWindows.Count % 8); }
 
         _view = new DocumentView(new DocEditor(Doc.Model.Document.CreateBlank()));
-        AutomationProperties.SetName(_view, "Документ");
+        AutomationProperties.SetName(_view, Loc.L("Документ"));
         AutomationProperties.SetAutomationId(_view, "DocumentView");
         _scroll = new ScrollViewer
         {
@@ -104,8 +104,8 @@ public sealed partial class EditorWindow : Window
         };
         _hRuler = new HorizontalRuler(_view);
         _vRuler = new VerticalRuler(_view);
-        AutomationProperties.SetName(_hRuler, "Горизонтальная линейка");
-        AutomationProperties.SetName(_vRuler, "Вертикальная линейка");
+        AutomationProperties.SetName(_hRuler, Loc.L("Горизонтальная линейка"));
+        AutomationProperties.SetName(_vRuler, Loc.L("Вертикальная линейка"));
 
         BuildCommands();
         Content = BuildLayout();
@@ -173,7 +173,7 @@ public sealed partial class EditorWindow : Window
 
         // панель сообщений (только чтение, восстановление, замена шрифтов)
         var mb = new DockPanel();
-        var close = Theme.ToolButton("Закрыть сообщение", Theme.IconPath(Theme.Icon.Close, 14), null, (_, _) => _messageBar.Visibility = Visibility.Collapsed);
+        var close = Theme.ToolButton(Loc.L("Закрыть сообщение"), Theme.IconPath(Theme.Icon.Close, 14), null, (_, _) => _messageBar.Visibility = Visibility.Collapsed);
         DockPanel.SetDock(close, Dock.Right);
         DockPanel.SetDock(_messageAction, Dock.Right);
         _messageAction.Click += (_, _) => _messageActionHandler?.Invoke();
@@ -344,7 +344,7 @@ public sealed partial class EditorWindow : Window
         catch (Exception ex)
         {
             Log.Error("open", ex);
-            MessageBox.Show(this, string.Format(Strings.CannotOpen, Path.GetFileName(path), "Файл повреждён или имеет неподдерживаемый формат (" + ex.Message + ")."),
+            MessageBox.Show(this, string.Format(Strings.CannotOpen, Path.GetFileName(path), Loc.L("Файл повреждён или имеет неподдерживаемый формат (") + ex.Message + ")."),
                 Strings.AppName, MessageBoxButton.OK, MessageBoxImage.Error);
             return false;
         }
@@ -352,24 +352,24 @@ public sealed partial class EditorWindow : Window
     }
 
     private string ReadOnlyReason() =>
-        _lockedElsewhere ? "Файл уже открыт в другом окне RWrite. Здесь он открыт только для чтения — изменения можно сохранить копией."
-        : _compatReadOnly ? "Только чтение: в документе есть содержимое, которое RWrite пока не умеет править безопасно (" + (_report?.ToUserText() ?? "") + "). Исходный файл не изменяется; можно сохранить копию."
-        : "Документ открыт только для чтения.";
+        _lockedElsewhere ? Loc.L("Файл уже открыт в другом окне RWrite. Здесь он открыт только для чтения — изменения можно сохранить копией.")
+        : _compatReadOnly ? Loc.L("Только чтение: в документе есть содержимое, которое RWrite пока не умеет править безопасно (") + (_report?.ToUserText() ?? "") + Loc.L("). Исходный файл не изменяется; можно сохранить копию.")
+        : Loc.L("Документ открыт только для чтения.");
 
     private void ShowOpenMessages(bool recovered, Doc.Model.Document doc)
     {
-        if (recovered) { ShowMessage(Strings.RecoveredBanner, "Сохранить", () => _ = SaveAsync(false)); return; }
-        if (ReadOnly) { ShowMessage(ReadOnlyReason(), "Сохранить копию", () => _ = SaveAsync(true)); return; }
-        if (_fileReadOnly) { ShowMessage(Strings.FileReadOnlyBanner, "Сохранить копию", () => _ = SaveAsync(true)); return; }
+        if (recovered) { ShowMessage(Strings.RecoveredBanner, Loc.L("Сохранить"), () => _ = SaveAsync(false)); return; }
+        if (ReadOnly) { ShowMessage(ReadOnlyReason(), Loc.L("Сохранить копию"), () => _ = SaveAsync(true)); return; }
+        if (_fileReadOnly) { ShowMessage(Strings.FileReadOnlyBanner, Loc.L("Сохранить копию"), () => _ = SaveAsync(true)); return; }
         // SAVE-04: отсутствующие шрифты — обычными словами
         var missing = doc.UsedFonts().Where(f => !FontCatalog.Shared.HasFamily(f)).Take(3)
-            .Select(f => $"«{f}» (показан «{FontCatalog.Shared.SubstituteFor(f) ?? FontCatalog.DefaultFamily}»)").ToList();
+            .Select(f => Loc.F("«{0}» (показан «{1}»)", f, FontCatalog.Shared.SubstituteFor(f) ?? FontCatalog.DefaultFamily)).ToList();
         if (missing.Count > 0)
         {
-            ShowMessage($"На компьютере нет шрифта {string.Join(", ", missing)}. Вид может немного отличаться от Word; в файле шрифт сохранится.", null, null);
+            ShowMessage(Loc.F("На компьютере нет шрифта {0}. Вид может немного отличаться от Word; в файле шрифт сохранится.", string.Join(", ", missing)), null, null);
             return;
         }
-        if (_report?.Status == InspectionStatus.OkWithWarnings) { ShowMessage(Strings.WarningsBanner, "Подробнее", ShowReport); return; }
+        if (_report?.Status == InspectionStatus.OkWithWarnings) { ShowMessage(Strings.WarningsBanner, Loc.L("Подробнее"), ShowReport); return; }
         _messageBar.Visibility = Visibility.Collapsed;
     }
 
@@ -435,7 +435,7 @@ public sealed partial class EditorWindow : Window
             }
             if (OpenWindows.Any(w => w != this && string.Equals(w._path, Path.GetFullPath(target), StringComparison.OrdinalIgnoreCase)))
             {
-                MessageBox.Show(this, "Этот файл открыт в другом окне. Выберите другое имя.", Strings.AppName, MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show(this, Loc.L("Этот файл открыт в другом окне. Выберите другое имя."), Strings.AppName, MessageBoxButton.OK, MessageBoxImage.Information);
                 return false;
             }
         }
@@ -479,7 +479,7 @@ public sealed partial class EditorWindow : Window
         catch (Exception ex)
         {
             Log.Error("save", ex);
-            MessageBox.Show(this, string.Format(Strings.SaveFailed, ex.Message + " Исходный файл не изменён."), Strings.AppName, MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(this, string.Format(Strings.SaveFailed, ex.Message + Loc.L(" Исходный файл не изменён.")), Strings.AppName, MessageBoxButton.OK, MessageBoxImage.Error);
             return false;
         }
         finally
@@ -524,7 +524,7 @@ public sealed partial class EditorWindow : Window
                 File.Move(tmp, target, overwrite: true);
             });
             Mouse.OverrideCursor = null;
-            ShowMessage(string.Format(Strings.PdfDone, target), "Открыть папку", () =>
+            ShowMessage(string.Format(Strings.PdfDone, target), Loc.L("Открыть папку"), () =>
             {
                 try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", $"/select,\"{target}\"") { UseShellExecute = true }); } catch { }
             });
@@ -674,7 +674,7 @@ public sealed partial class EditorWindow : Window
         if (link.Url is null)
         {
             // закладка внутри документа: переход к абзацу с закладкой
-            ShowMessage("Переход по закладкам внутри документа пока не поддерживается.", null, null);
+            ShowMessage(Loc.L("Переход по закладкам внутри документа пока не поддерживается."), null, null);
             return;
         }
         var (decision, uri, reason) = Pero.Core.Security.LinkPolicy.Evaluate(link.Url);

@@ -100,13 +100,13 @@ public sealed partial class DocEditor
         });
     }
 
-    public void ToggleBold() { bool on = GetFormatState().Bold != true; ApplyRun("Полужирный", r => r.Bold = on); }
-    public void ToggleItalic() { bool on = GetFormatState().Italic != true; ApplyRun("Курсив", r => r.Italic = on); }
-    public void ToggleUnderline() { bool on = GetFormatState().Underline != true; ApplyRun("Подчёркивание", r => r.Underline = on ? "single" : "none"); }
-    public void SetFont(string font) => ApplyRun("Шрифт", r => { r.Font = font; r.FontTheme = null; });
-    public void SetSize(double pt) => ApplyRun("Размер", r => r.SizeHalfPt = (int)Math.Round(Math.Clamp(pt, 1, 1638) * 2));
-    public void SetColor(string rrggbb) => ApplyRun("Цвет текста", r => { r.Color = rrggbb; r.RawColor = null; });
-    public void SetHighlight(string? name) => ApplyRun("Маркер", r => r.Highlight = name ?? "none");
+    public void ToggleBold() { bool on = GetFormatState().Bold != true; ApplyRun(Loc.L("Полужирный"), r => r.Bold = on); }
+    public void ToggleItalic() { bool on = GetFormatState().Italic != true; ApplyRun(Loc.L("Курсив"), r => r.Italic = on); }
+    public void ToggleUnderline() { bool on = GetFormatState().Underline != true; ApplyRun(Loc.L("Подчёркивание"), r => r.Underline = on ? "single" : "none"); }
+    public void SetFont(string font) => ApplyRun(Loc.L("Шрифт"), r => { r.Font = font; r.FontTheme = null; });
+    public void SetSize(double pt) => ApplyRun(Loc.L("Размер"), r => r.SizeHalfPt = (int)Math.Round(Math.Clamp(pt, 1, 1638) * 2));
+    public void SetColor(string rrggbb) => ApplyRun(Loc.L("Цвет текста"), r => { r.Color = rrggbb; r.RawColor = null; });
+    public void SetHighlight(string? name) => ApplyRun(Loc.L("Маркер"), r => r.Highlight = name ?? "none");
 
     /// <summary>Шаг размера шрифта (−/+ на панели): по 1 пт.</summary>
     public void StepSize(int delta)
@@ -127,13 +127,13 @@ public sealed partial class DocEditor
         });
     }
 
-    public void SetAlign(Align a) => ApplyPara("Выравнивание", p => p.Props.Align = a);
+    public void SetAlign(Align a) => ApplyPara(Loc.L("Выравнивание"), p => p.Props.Align = a);
 
     /// <summary>Межстрочный интервал: 240 — одинарный, 276 — 1,15, 360 — 1,5, 480 — двойной.</summary>
-    public void SetLineSpacing(int line240) => ApplyPara("Межстрочный интервал", p => { p.Props.Line = line240; p.Props.LineRule = LineRule.Auto; });
+    public void SetLineSpacing(int line240) => ApplyPara(Loc.L("Межстрочный интервал"), p => { p.Props.Line = line240; p.Props.LineRule = LineRule.Auto; });
 
     /// <summary>Отступ на 1,25 см (708 twips — шаг табуляции по умолчанию в русском Word).</summary>
-    public void Indent(int deltaTwips) => ApplyPara(deltaTwips > 0 ? "Увеличить отступ" : "Уменьшить отступ", p =>
+    public void Indent(int deltaTwips) => ApplyPara(deltaTwips > 0 ? Loc.L("Увеличить отступ") : Loc.L("Уменьшить отступ"), p =>
     {
         if (p.Props.NumId is not null)
         {
@@ -144,7 +144,7 @@ public sealed partial class DocEditor
         p.Props.IndLeft = Math.Max(0, cur + deltaTwips);
     });
 
-    public void SetIndents(int? left, int? right, int? first) => ApplyPara("Отступы", p =>
+    public void SetIndents(int? left, int? right, int? first) => ApplyPara(Loc.L("Отступы"), p =>
     {
         if (left is not null) p.Props.IndLeft = Math.Max(0, left.Value);
         if (right is not null) p.Props.IndRight = Math.Max(0, right.Value);
@@ -156,13 +156,13 @@ public sealed partial class DocEditor
     {
         EnsureStyle(styleId);
         bool normal = styleId == "Normal" || styleId == Doc.Styles.DefaultParagraphStyleId;
-        ApplyPara("Стиль", p => p.Props.StyleId = normal ? null : styleId);
+        ApplyPara(Loc.L("Стиль"), p => p.Props.StyleId = normal ? null : styleId);
     }
 
     public void ClearFormatting()
     {
         var sel = Selection;
-        Execute("Очистить форматирование", () =>
+        Execute(Loc.L("Очистить форматирование"), () =>
         {
             for (int i = sel.Start.Para; i <= sel.End.Para; i++)
             {
@@ -201,7 +201,7 @@ public sealed partial class DocEditor
     {
         if (_painter is not { } f) return;
         var sel = Selection;
-        Execute("Копирование формата", () =>
+        Execute(Loc.L("Копирование формата"), () =>
         {
             for (int i = sel.Start.Para; i <= sel.End.Para; i++)
             {

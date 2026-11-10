@@ -20,6 +20,8 @@ public sealed class UiRun(string exe, string samples, string outDir, Action<stri
     private string RecoveryDir => Path.Combine(LocalApp, "Pero", "Recovery");
     private string Work => Path.Combine(Path.GetTempPath(), "pero-ui");
     private long? _coldStart;
+    /// <summary>Язык, с которым запускается RWrite (RWRITE_LANG). Сценарии проверяют русский интерфейс; null — без переменной (настройка, по умолчанию английский).</summary>
+    private string? _lang = "ru";
 
     public List<(string Name, bool Ok, string Note)> RunAll()
     {
@@ -28,6 +30,24 @@ public sealed class UiRun(string exe, string samples, string outDir, Action<stri
         Directory.CreateDirectory(Work);
         foreach (var d in new[] { RecoveryDir, Path.Combine(LocalApp, "Pero", "Locks") })
             if (Directory.Exists(d)) try { Directory.Delete(d, true); } catch { }
+
+        Scenario("00-english-by-default", () =>
+        {
+            _lang = null;
+            try
+            {
+                var s = Start(size: (1366, 768));
+                Thread.Sleep(1500);
+                Shot("ui-00-english-default");
+                Check(s.Window.Title.Contains("New document"), $"заголовок «{s.Window.Title}»");
+                foreach (var name in new[] { "File", "Edit", "View", "Insert", "Format", "Tools", "Help" })
+                    Check(Find(s.Window, name) is not null, $"нет меню «{name}»");
+                Check(Find(s.Window, "Файл") is null, "меню на русском");
+                foreach (var name in new[] { "Menu", "Undo", "Zoom", "Style", "Font", "Font size", "Bold", "Italic", "Underline" })
+                    Check(Find(s.Window, name) is not null, $"нет элемента «{name}»");
+            }
+            finally { _lang = "ru"; }
+        });
 
         Scenario("01-empty-1366x768", () =>
         {
@@ -404,6 +424,7 @@ public sealed class UiRun(string exe, string samples, string outDir, Action<stri
     {
         var psi = new ProcessStartInfo(exe) { UseShellExecute = false, WorkingDirectory = Path.GetDirectoryName(exe)! };
         if (file is not null) psi.ArgumentList.Add(file);
+        if (_lang is null) psi.Environment.Remove("RWRITE_LANG"); else psi.Environment["RWRITE_LANG"] = _lang;
         var app = Application.Launch(psi);
         Window window = waitMain ? MainWindowOf(app) : null!;
         if (window is not null)

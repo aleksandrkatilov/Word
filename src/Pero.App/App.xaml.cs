@@ -15,7 +15,11 @@ public partial class App : Application
     public App()
     {
         var settings = AppSettings.Load();
-        var culture = new CultureInfo("ru-RU");
+        // Язык интерфейса: английский по умолчанию; RWRITE_LANG=ru|en (тесты, отладка) важнее настройки.
+        string lang = AppSettings.NormalizeLanguage(Environment.GetEnvironmentVariable("RWRITE_LANG"))
+                      ?? AppSettings.NormalizeLanguage(settings.Language) ?? "en";
+        Loc.Use(lang);
+        var culture = new CultureInfo(lang == "ru" ? "ru-RU" : "en-US");
         CultureInfo.DefaultThreadCurrentUICulture = culture;
         CultureInfo.DefaultThreadCurrentCulture = culture;
         Thread.CurrentThread.CurrentUICulture = culture;

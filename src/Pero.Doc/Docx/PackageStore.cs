@@ -25,7 +25,7 @@ internal sealed class PackageStore
         var lim = limits ?? PackageLimits.Default;
         var store = new PackageStore();
         using var zip = new ZipArchive(stream, ZipArchiveMode.Read, leaveOpen: true);
-        if (zip.Entries.Count > lim.MaxEntries) throw new InvalidDataException("слишком много частей пакета");
+        if (zip.Entries.Count > lim.MaxEntries) throw new InvalidDataException(Loc.L("слишком много частей пакета"));
         var budget = new DecompressionBudget(lim.MaxTotalUncompressedBytes);
         foreach (var e in zip.Entries)
         {
@@ -36,11 +36,11 @@ internal sealed class PackageStore
             store.Parts[e.FullName] = ms.ToArray();
             store.Order.Add(e.FullName);
         }
-        var rels = store.LoadXml("_rels/.rels") ?? throw new InvalidDataException("нет _rels/.rels");
+        var rels = store.LoadXml("_rels/.rels") ?? throw new InvalidDataException(Loc.L("нет _rels/.rels"));
         var main = rels.Root!.Elements(Ns.Rel + "Relationship").FirstOrDefault(r => (string?)r.Attribute("Type") == Ns.RelOfficeDoc)
-            ?? throw new InvalidDataException("нет основной части документа");
+            ?? throw new InvalidDataException(Loc.L("нет основной части документа"));
         store.MainPart = ((string)main.Attribute("Target")!).TrimStart('/');
-        if (!store.Parts.ContainsKey(store.MainPart)) throw new InvalidDataException("отсутствует основная часть документа");
+        if (!store.Parts.ContainsKey(store.MainPart)) throw new InvalidDataException(Loc.L("отсутствует основная часть документа"));
         return store;
     }
 
@@ -172,7 +172,8 @@ internal sealed class PackageStore
         Put("_rels/.rels", BlankTemplates.RootRels);
         Put("word/_rels/document.xml.rels", BlankTemplates.DocumentRels);
         Put("word/document.xml", BlankTemplates.Document);
-        Put("word/styles.xml", BlankTemplates.Styles);
+        // язык проверки правописания нового документа — по языку интерфейса
+        Put("word/styles.xml", Loc.English ? BlankTemplates.Styles.Replace("w:val=\"ru-RU\"", "w:val=\"en-US\"") : BlankTemplates.Styles);
         Put("word/numbering.xml", BlankTemplates.NumberingXml);
         Put("word/settings.xml", BlankTemplates.Settings);
         Put("docProps/core.xml", BlankTemplates.Core);

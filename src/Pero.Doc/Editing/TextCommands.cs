@@ -9,7 +9,7 @@ public sealed partial class DocEditor
     public void TypeText(string text)
     {
         if (text.Length == 0) return;
-        Execute("Ввод", () =>
+        Execute(Loc.L("Ввод"), () =>
         {
             var at = DeleteSelectionCore();
             var p = P(at.Para);
@@ -24,7 +24,7 @@ public sealed partial class DocEditor
     public void InsertPlainText(string text)
     {
         var lines = text.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
-        Execute("Вставка", () =>
+        Execute(Loc.L("Вставка"), () =>
         {
             var at = DeleteSelectionCore();
             var props = InlineOps.PropsAt(P(at.Para), at.Offset);
@@ -39,7 +39,7 @@ public sealed partial class DocEditor
     }
 
     /// <summary>Enter — новый абзац.</summary>
-    public void NewParagraph() => Execute("Новый абзац", () =>
+    public void NewParagraph() => Execute(Loc.L("Новый абзац"), () =>
     {
         var at = DeleteSelectionCore();
         var p = P(at.Para);
@@ -54,10 +54,10 @@ public sealed partial class DocEditor
     });
 
     /// <summary>Shift+Enter — перенос строки.</summary>
-    public void LineBreak() => InsertBreak(BreakKind.Line, "Перенос строки");
+    public void LineBreak() => InsertBreak(BreakKind.Line, Loc.L("Перенос строки"));
 
     /// <summary>Ctrl+Enter — разрыв страницы.</summary>
-    public void PageBreak() => InsertBreak(BreakKind.Page, "Разрыв страницы");
+    public void PageBreak() => InsertBreak(BreakKind.Page, Loc.L("Разрыв страницы"));
 
     private void InsertBreak(BreakKind kind, string name) => Execute(name, () =>
     {
@@ -75,7 +75,7 @@ public sealed partial class DocEditor
         var p = P(at.Para);
         if (at.Offset > 0)
         {
-            Execute("Удаление", () =>
+            Execute(Loc.L("Удаление"), () =>
             {
                 InlineOps.Remove(p, at.Offset - 1, at.Offset);
                 return Selection.At(new DocPos(at.Para, at.Offset - 1));
@@ -85,13 +85,13 @@ public sealed partial class DocEditor
         // в начале абзаца: сначала снять список, затем отступ первой строки, затем слить с предыдущим
         if (p.Props.NumId is not null)
         {
-            Execute("Снять список", () => { p.Props.NumId = null; p.Props.Ilvl = null; return Selection; });
+            Execute(Loc.L("Снять список"), () => { p.Props.NumId = null; p.Props.Ilvl = null; return Selection; });
             return;
         }
         if (at.Para == 0 || !Index.SameContainer(at.Para - 1, at.Para)) return;
         var loc = Index[at.Para];
         if (loc.Index == 0 || loc.Container[loc.Index - 1] is not Paragraph prev) return;
-        Execute("Удаление", () =>
+        Execute(Loc.L("Удаление"), () =>
         {
             int len = prev.Length;
             MergeWithNext(loc.Container, loc.Index - 1);
@@ -106,18 +106,18 @@ public sealed partial class DocEditor
         var p = P(at.Para);
         if (at.Offset < p.Length)
         {
-            Execute("Удаление", () => { InlineOps.Remove(p, at.Offset, at.Offset + 1); return Selection.At(at); });
+            Execute(Loc.L("Удаление"), () => { InlineOps.Remove(p, at.Offset, at.Offset + 1); return Selection.At(at); });
             return;
         }
         var loc = Index[at.Para];
         if (loc.Index + 1 >= loc.Container.Count || loc.Container[loc.Index + 1] is not Paragraph) return;
-        Execute("Удаление", () => { MergeWithNext(loc.Container, loc.Index); return Selection.At(at); });
+        Execute(Loc.L("Удаление"), () => { MergeWithNext(loc.Container, loc.Index); return Selection.At(at); });
     }
 
     public void DeleteSelection()
     {
         if (Selection.IsEmpty) return;
-        Execute("Удаление", () => Selection.At(DeleteSelectionCore()));
+        Execute(Loc.L("Удаление"), () => Selection.At(DeleteSelectionCore()));
     }
 
     /// <summary>Удалить выделение внутри транзакции. Возвращает позицию начала.</summary>

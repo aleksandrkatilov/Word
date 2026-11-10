@@ -31,7 +31,7 @@ public sealed partial class EditorWindow
     private UIElement BuildToolbar()
     {
         _toolbar = new ToolBar { Background = Brushes.Transparent, BorderThickness = new Thickness(0), Height = 38, Padding = new Thickness(0) };
-        AutomationProperties.SetName(_toolbar, "Панель форматирования");
+        AutomationProperties.SetName(_toolbar, Loc.L("Панель форматирования"));
         var tray = new ToolBarTray { IsLocked = true, Background = Brushes.Transparent };
         tray.ToolBars.Add(_toolbar);
         var host = new Border
@@ -58,40 +58,40 @@ public sealed partial class EditorWindow
         Add(BuildCommandSearch(), keep: true);
         Add(Theme.Divider(), keep: true);
         // отмена, повтор, печать, копирование формата
-        _undo = Btn("Отменить", Theme.Icon.Undo); Add(_undo, keep: true);
-        _redo = Btn("Повторить", Theme.Icon.Redo); Add(_redo, keep: true);
-        Add(Btn("Печать…", Theme.Icon.Print, "Печать"));
-        _painter = Theme.ToolToggle("Копировать форматирование", Theme.IconPath(Theme.Icon.Paint), null, (_, _) => Exec("Копировать форматирование"));
+        _undo = Btn(Loc.L("Отменить"), Theme.Icon.Undo); Add(_undo, keep: true);
+        _redo = Btn(Loc.L("Повторить"), Theme.Icon.Redo); Add(_redo, keep: true);
+        Add(Btn(Loc.L("Печать…"), Theme.Icon.Print, Loc.L("Печать")));
+        _painter = Theme.ToolToggle(Loc.L("Копировать форматирование"), Theme.IconPath(Theme.Icon.Paint), null, (_, _) => Exec(Loc.L("Копировать форматирование")));
         Add(_painter);
         Add(Theme.Divider());
         // масштаб
-        _zoomCombo = new ComboBox { Width = 74, Height = 26, ToolTip = "Масштаб", Focusable = true, VerticalContentAlignment = VerticalAlignment.Center };
-        foreach (var z in new[] { "50%", "75%", "90%", "100%", "125%", "150%", "200%", "По ширине" }) _zoomCombo.Items.Add(z);
+        _zoomCombo = new ComboBox { Width = 74, Height = 26, ToolTip = Loc.L("Масштаб"), Focusable = true, VerticalContentAlignment = VerticalAlignment.Center };
+        foreach (var z in new[] { "50%", "75%", "90%", "100%", "125%", "150%", "200%", Loc.L("По ширине") }) _zoomCombo.Items.Add(z);
         _zoomCombo.SelectedIndex = 3;
-        AutomationProperties.SetName(_zoomCombo, "Масштаб");
+        AutomationProperties.SetName(_zoomCombo, Loc.L("Масштаб"));
         _zoomCombo.SelectionChanged += (_, _) =>
         {
             if (_updatingUi || _zoomCombo.SelectedItem is not string s) return;
-            if (s == "По ширине") _view.FitWidth();
+            if (s == Loc.L("По ширине")) _view.FitWidth();
             else if (double.TryParse(s.TrimEnd('%'), out double z)) _view.Zoom = z / 100;
             _view.Focus();
         };
         Add(_zoomCombo);
         Add(Theme.Divider());
         // стиль
-        _styleCombo = new ComboBox { Width = 118, Height = 26, ToolTip = "Стиль абзаца", VerticalContentAlignment = VerticalAlignment.Center };
+        _styleCombo = new ComboBox { Width = 118, Height = 26, ToolTip = Loc.L("Стиль абзаца"), VerticalContentAlignment = VerticalAlignment.Center };
         foreach (var (t, _) in StyleList) _styleCombo.Items.Add(t);
-        AutomationProperties.SetName(_styleCombo, "Стиль");
+        AutomationProperties.SetName(_styleCombo, Loc.L("Стиль"));
         _styleCombo.SelectionChanged += (_, _) =>
         {
             if (_updatingUi || _styleCombo.SelectedIndex < 0) return;
-            Exec("Стиль: " + StyleList[_styleCombo.SelectedIndex].Title);
+            Exec(Loc.L("Стиль: ") + StyleList[_styleCombo.SelectedIndex].Title);
         };
         Add(_styleCombo, keep: true);
         Add(Theme.Divider(), keep: true);
         // шрифт
-        _fontCombo = new ComboBox { Width = 132, Height = 26, IsEditable = true, ToolTip = "Шрифт", MaxDropDownHeight = 420, VerticalContentAlignment = VerticalAlignment.Center };
-        AutomationProperties.SetName(_fontCombo, "Шрифт");
+        _fontCombo = new ComboBox { Width = 132, Height = 26, IsEditable = true, ToolTip = Loc.L("Шрифт"), MaxDropDownHeight = 420, VerticalContentAlignment = VerticalAlignment.Center };
+        AutomationProperties.SetName(_fontCombo, Loc.L("Шрифт"));
         _fontCombo.DropDownOpened += (_, _) => FillFonts();
         _fontCombo.DropDownClosed += (_, _) => { if (_fontCombo.SelectedItem is string f) ApplyFont(f); };
         _fontCombo.PreviewKeyDown += (_, e) =>
@@ -102,10 +102,10 @@ public sealed partial class EditorWindow
         Add(_fontCombo, keep: true);
         Add(Theme.Divider(), keep: true);
         // размер −/+
-        Add(Theme.ToolButton("Уменьшить размер шрифта", Theme.IconPath(Theme.Icon.Minus), "Ctrl+[", (_, _) => Exec("Уменьшить размер шрифта")), keep: true);
-        _sizeCombo = new ComboBox { Width = 52, Height = 26, IsEditable = true, ToolTip = "Размер шрифта (8–72 из списка, 1–1638 вручную)", VerticalContentAlignment = VerticalAlignment.Center };
+        Add(Theme.ToolButton(Loc.L("Уменьшить размер шрифта"), Theme.IconPath(Theme.Icon.Minus), "Ctrl+[", (_, _) => Exec(Loc.L("Уменьшить размер шрифта"))), keep: true);
+        _sizeCombo = new ComboBox { Width = 52, Height = 26, IsEditable = true, ToolTip = Loc.L("Размер шрифта (8–72 из списка, 1–1638 вручную)"), VerticalContentAlignment = VerticalAlignment.Center };
         foreach (int s in new[] { 8, 9, 10, 11, 12, 14, 18, 24, 30, 36, 48, 60, 72 }) _sizeCombo.Items.Add(s.ToString(CultureInfo.CurrentCulture));
-        AutomationProperties.SetName(_sizeCombo, "Размер шрифта");
+        AutomationProperties.SetName(_sizeCombo, Loc.L("Размер шрифта"));
         _sizeCombo.DropDownClosed += (_, _) => { if (_sizeCombo.SelectedItem is string s) ApplySize(s); };
         _sizeCombo.PreviewKeyDown += (_, e) =>
         {
@@ -113,35 +113,35 @@ public sealed partial class EditorWindow
             if (e.Key == Key.Escape) { UpdateFormatUi(); _view.Focus(); e.Handled = true; }
         };
         Add(_sizeCombo, keep: true);
-        Add(Theme.ToolButton("Увеличить размер шрифта", Theme.IconPath(Theme.Icon.Plus), "Ctrl+]", (_, _) => Exec("Увеличить размер шрифта")), keep: true);
+        Add(Theme.ToolButton(Loc.L("Увеличить размер шрифта"), Theme.IconPath(Theme.Icon.Plus), "Ctrl+]", (_, _) => Exec(Loc.L("Увеличить размер шрифта"))), keep: true);
         Add(Theme.Divider(), keep: true);
         // полужирный, курсив, подчёркивание
-        _bold = Theme.ToolToggle("Полужирный", Theme.Letter("B", FontWeights.Bold), "Ctrl+B", (_, _) => Exec("Полужирный"));
-        _italic = Theme.ToolToggle("Курсив", Theme.Letter("I", FontWeights.SemiBold, FontStyles.Italic, family: "Georgia"), "Ctrl+I", (_, _) => Exec("Курсив"));
-        _underline = Theme.ToolToggle("Подчёркнутый", Theme.Letter("U", underline: true), "Ctrl+U", (_, _) => Exec("Подчёркнутый"));
+        _bold = Theme.ToolToggle(Loc.L("Полужирный"), Theme.Letter("B", FontWeights.Bold), "Ctrl+B", (_, _) => Exec(Loc.L("Полужирный")));
+        _italic = Theme.ToolToggle(Loc.L("Курсив"), Theme.Letter("I", FontWeights.SemiBold, FontStyles.Italic, family: "Georgia"), "Ctrl+I", (_, _) => Exec(Loc.L("Курсив")));
+        _underline = Theme.ToolToggle(Loc.L("Подчёркнутый"), Theme.Letter("U", underline: true), "Ctrl+U", (_, _) => Exec(Loc.L("Подчёркнутый")));
         Add(_bold, keep: true); Add(_italic, keep: true); Add(_underline, keep: true);
         // цвет текста и маркер
         var colorIcon = Theme.ColorIcon(Theme.Letter("A", FontWeights.SemiBold), out _colorBar);
-        Add(Theme.DropButton("Цвет текста", colorIcon, ColorMenu), keep: true);
+        Add(Theme.DropButton(Loc.L("Цвет текста"), colorIcon, ColorMenu), keep: true);
         var hlIcon = Theme.ColorIcon(Theme.IconPath(Theme.Icon.Highlight, 16), out _highlightBar);
         _highlightBar.Fill = new SolidColorBrush(Theme.Hex("FFFF00"));
-        Add(Theme.DropButton("Цвет маркера", hlIcon, HighlightMenu));
+        Add(Theme.DropButton(Loc.L("Цвет маркера"), hlIcon, HighlightMenu));
         Add(Theme.Divider());
         // ссылка и изображение
-        Add(Btn("Ссылка…", Theme.Icon.Link, "Вставить ссылку"));
-        Add(Btn("Изображение…", Theme.Icon.Image, "Вставить изображение"));
+        Add(Btn(Loc.L("Ссылка…"), Theme.Icon.Link, Loc.L("Вставить ссылку")));
+        Add(Btn(Loc.L("Изображение…"), Theme.Icon.Image, Loc.L("Вставить изображение")));
         Add(Theme.Divider());
         // выравнивание, интервал, списки
         _alignIcon = new ContentControl { Content = Theme.IconPath(Theme.Icon.AlignLeft), Focusable = false };
-        Add(Theme.DropButton("Выравнивание", _alignIcon, AlignMenu));
-        Add(Theme.DropButton("Межстрочный интервал", Theme.IconPath(Theme.Icon.Spacing), SpacingMenu));
+        Add(Theme.DropButton(Loc.L("Выравнивание"), _alignIcon, AlignMenu));
+        Add(Theme.DropButton(Loc.L("Межстрочный интервал"), Theme.IconPath(Theme.Icon.Spacing), SpacingMenu));
         _listIcon = new ContentControl { Content = Theme.IconPath(Theme.Icon.Bullets), Focusable = false };
-        Add(Theme.DropButton("Списки", _listIcon, ListMenu));
+        Add(Theme.DropButton(Loc.L("Списки"), _listIcon, ListMenu));
         Add(Theme.Divider());
         // отступы и очистка форматирования
-        Add(Btn("Уменьшить отступ", Theme.Icon.IndentLess));
-        Add(Btn("Увеличить отступ", Theme.Icon.IndentMore));
-        Add(Btn("Очистить форматирование", Theme.Icon.ClearFormat));
+        Add(Btn(Loc.L("Уменьшить отступ"), Theme.Icon.IndentLess));
+        Add(Btn(Loc.L("Увеличить отступ"), Theme.Icon.IndentMore));
+        Add(Btn(Loc.L("Очистить форматирование"), Theme.Icon.ClearFormat));
         return host;
     }
 
@@ -150,8 +150,8 @@ public sealed partial class EditorWindow
     {
         if (_toolbar.Template?.FindName("OverflowButton", _toolbar) is ToggleButton more)
         {
-            more.ToolTip = "Ещё";
-            AutomationProperties.SetName(more, "Ещё");
+            more.ToolTip = Loc.L("Ещё");
+            AutomationProperties.SetName(more, Loc.L("Ещё"));
         }
         if (_toolbar.Template?.FindName("ToolBarThumb", _toolbar) is FrameworkElement thumb) thumb.Visibility = Visibility.Collapsed;
     }
@@ -169,8 +169,8 @@ public sealed partial class EditorWindow
         if (font != Ed.GetFormatState().Font)
         {
             if (!Doc.Fonts.FontCatalog.Shared.HasFamily(font))
-                ShowMessage($"Шрифт «{font}» не установлен на этом компьютере. Он будет записан в документ, а показан похожим шрифтом.", null, null);
-            Exec(new AppCommand("Шрифт", null, () => Ed.SetFont(font), edits: true));
+                ShowMessage(Loc.F("Шрифт «{0}» не установлен на этом компьютере. Он будет записан в документ, а показан похожим шрифтом.", font), null, null);
+            Exec(new AppCommand(Loc.L("Шрифт"), null, () => Ed.SetFont(font), edits: true));
         }
         _view.Focus();
     }
@@ -180,9 +180,9 @@ public sealed partial class EditorWindow
         if (_updatingUi) return;
         if (Ui.FormDialog.TryNum(text, out double pt) && pt >= 1 && pt <= 1638)
         {
-            if (Ed.GetFormatState().SizePt != pt) Exec(new AppCommand("Размер шрифта", null, () => Ed.SetSize(pt), edits: true));
+            if (Ed.GetFormatState().SizePt != pt) Exec(new AppCommand(Loc.L("Размер шрифта"), null, () => Ed.SetSize(pt), edits: true));
         }
-        else MessageBox.Show(this, "Размер шрифта — число от 1 до 1638.", Strings.AppName, MessageBoxButton.OK, MessageBoxImage.Information);
+        else MessageBox.Show(this, Loc.L("Размер шрифта — число от 1 до 1638."), Strings.AppName, MessageBoxButton.OK, MessageBoxImage.Information);
         UpdateFormatUi();
         _view.Focus();
     }
@@ -204,16 +204,16 @@ public sealed partial class EditorWindow
     }
 
     private ContextMenu AlignMenu() => DropMenu(
-        ("По левому краю", "По левому краю", Theme.Icon.AlignLeft), ("По центру", "По центру", Theme.Icon.AlignCenter),
-        ("По правому краю", "По правому краю", Theme.Icon.AlignRight), ("По ширине", "По ширине (выравнивание)", Theme.Icon.AlignJustify));
+        (Loc.L("По левому краю"), Loc.L("По левому краю"), Theme.Icon.AlignLeft), (Loc.L("По центру"), Loc.L("По центру"), Theme.Icon.AlignCenter),
+        (Loc.L("По правому краю"), Loc.L("По правому краю"), Theme.Icon.AlignRight), (Loc.L("По ширине"), Loc.L("По ширине (выравнивание)"), Theme.Icon.AlignJustify));
 
     private ContextMenu SpacingMenu() => DropMenu(
-        ("Одинарный (1)", "Интервал 1", null), ("1,15", "Интервал 1,15", null), ("Полуторный (1,5)", "Интервал 1,5", null), ("Двойной (2)", "Интервал 2", null),
-        ("-", "", null), ("Абзац…", "Абзац…", null));
+        (Loc.L("Одинарный (1)"), Loc.L("Интервал 1"), null), ("1,15", Loc.L("Интервал 1,15"), null), (Loc.L("Полуторный (1,5)"), Loc.L("Интервал 1,5"), null), (Loc.L("Двойной (2)"), Loc.L("Интервал 2"), null),
+        ("-", "", null), (Loc.L("Абзац…"), Loc.L("Абзац…"), null));
 
     private ContextMenu ListMenu() => DropMenu(
-        ("Маркированный список", "Маркированный список", Theme.Icon.Bullets), ("Нумерованный список", "Нумерованный список", Theme.Icon.Numbers),
-        ("Убрать список", "Убрать список", null));
+        (Loc.L("Маркированный список"), Loc.L("Маркированный список"), Theme.Icon.Bullets), (Loc.L("Нумерованный список"), Loc.L("Нумерованный список"), Theme.Icon.Numbers),
+        (Loc.L("Убрать список"), Loc.L("Убрать список"), null));
 
     private ContextMenu ColorMenu()
     {
@@ -227,12 +227,12 @@ public sealed partial class EditorWindow
                 Width = 20, Height = 20, Margin = new Thickness(2), Background = new SolidColorBrush(Theme.Hex(h)), BorderBrush = Theme.Separator,
                 BorderThickness = new Thickness(1), ToolTip = "#" + h, Focusable = false,
             };
-            AutomationProperties.SetName(b, "Цвет #" + h);
-            b.Click += (_, _) => { m.IsOpen = false; Exec(new AppCommand("Цвет текста", null, () => Ed.SetColor(h), edits: true)); };
+            AutomationProperties.SetName(b, Loc.L("Цвет #") + h);
+            b.Click += (_, _) => { m.IsOpen = false; Exec(new AppCommand(Loc.L("Цвет текста"), null, () => Ed.SetColor(h), edits: true)); };
             grid.Children.Add(b);
         }
-        var auto = new MenuItem { Header = "Авто (чёрный)" };
-        auto.Click += (_, _) => Exec(new AppCommand("Цвет текста", null, () => Ed.ApplyRun("Цвет текста", r => { r.Color = null; r.RawColor = null; }), edits: true));
+        var auto = new MenuItem { Header = Loc.L("Авто (чёрный)") };
+        auto.Click += (_, _) => Exec(new AppCommand(Loc.L("Цвет текста"), null, () => Ed.ApplyRun(Loc.L("Цвет текста"), r => { r.Color = null; r.RawColor = null; }), edits: true));
         m.Items.Add(auto);
         m.Items.Add(new MenuItem { Header = grid, StaysOpenOnClick = true, Focusable = false });
         m.Closed += (_, _) => _view.Focus();
@@ -242,8 +242,8 @@ public sealed partial class EditorWindow
     private ContextMenu HighlightMenu()
     {
         var m = new ContextMenu();
-        var none = new MenuItem { Header = "Нет цвета" };
-        none.Click += (_, _) => Exec(new AppCommand("Маркер", null, () => Ed.SetHighlight(null), edits: true));
+        var none = new MenuItem { Header = Loc.L("Нет цвета") };
+        none.Click += (_, _) => Exec(new AppCommand(Loc.L("Маркер"), null, () => Ed.SetHighlight(null), edits: true));
         m.Items.Add(none);
         var grid = new UniformGrid { Columns = 5, Margin = new Thickness(4) };
         foreach (var (name, hex, title) in Theme.HighlightColors)
@@ -254,12 +254,12 @@ public sealed partial class EditorWindow
                 Width = 22, Height = 22, Margin = new Thickness(2), Background = new SolidColorBrush(Theme.Hex(hex)), BorderBrush = Theme.Separator,
                 BorderThickness = new Thickness(1), ToolTip = title, Focusable = false,
             };
-            AutomationProperties.SetName(b, "Маркер: " + title);
+            AutomationProperties.SetName(b, Loc.L("Маркер: ") + title);
             b.Click += (_, _) =>
             {
                 m.IsOpen = false;
                 _highlightBar.Fill = new SolidColorBrush(Theme.Hex(hex));
-                Exec(new AppCommand("Маркер", null, () => Ed.SetHighlight(n), edits: true));
+                Exec(new AppCommand(Loc.L("Маркер"), null, () => Ed.SetHighlight(n), edits: true));
             };
             grid.Children.Add(b);
         }
@@ -319,7 +319,7 @@ public sealed partial class EditorWindow
         if (_painterArmed) { _painterArmed = false; UpdateFormatUi(); return; }
         Ed.CopyFormat();
         _painterArmed = true;
-        ShowMessage("Выделите текст, к которому нужно применить скопированное оформление.", null, null);
+        ShowMessage(Loc.L("Выделите текст, к которому нужно применить скопированное оформление."), null, null);
         UpdateFormatUi();
     }
 
@@ -340,10 +340,10 @@ public sealed partial class EditorWindow
         _commandBox = new TextBox
         {
             Height = 26, VerticalContentAlignment = VerticalAlignment.Center, Padding = new Thickness(22, 0, 4, 0),
-            Background = Brushes.White, BorderBrush = Theme.Separator, ToolTip = "Поиск команд меню",
+            Background = Brushes.White, BorderBrush = Theme.Separator, ToolTip = Loc.L("Поиск команд меню"),
         };
-        AutomationProperties.SetName(_commandBox, "Меню");
-        var placeholder = new TextBlock { Text = "Меню", Foreground = Theme.Muted, Margin = new Thickness(25, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, IsHitTestVisible = false };
+        AutomationProperties.SetName(_commandBox, Loc.L("Меню"));
+        var placeholder = new TextBlock { Text = Loc.L("Меню"), Foreground = Theme.Muted, Margin = new Thickness(25, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, IsHitTestVisible = false };
         var icon = Theme.IconPath(Theme.Icon.Search, 14);
         icon.HorizontalAlignment = HorizontalAlignment.Left;
         icon.Margin = new Thickness(5, 0, 0, 0);
@@ -352,7 +352,7 @@ public sealed partial class EditorWindow
         grid.Children.Add(placeholder);
         grid.Children.Add(icon);
         _commandList = new ListBox { MaxHeight = 320, MinWidth = 260, BorderBrush = Theme.Separator };
-        AutomationProperties.SetName(_commandList, "Найденные команды");
+        AutomationProperties.SetName(_commandList, Loc.L("Найденные команды"));
         _commandPopup = new Popup { PlacementTarget = _commandBox, Placement = PlacementMode.Bottom, StaysOpen = false, Child = _commandList, AllowsTransparency = false };
         _commandBox.TextChanged += (_, _) =>
         {
@@ -387,7 +387,7 @@ public sealed partial class EditorWindow
         var words = q.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         foreach (var c in AllCommands.Where(c => words.All(w => c.Name.Contains(w, StringComparison.CurrentCultureIgnoreCase))).Take(14))
             _commandList.Items.Add(new ListBoxItem { Content = c.Gesture is null ? c.Name : $"{c.Name}   ({c.Gesture})", Tag = c, Padding = new Thickness(8, 4, 8, 4) });
-        if (_commandList.Items.Count == 0) _commandList.Items.Add(new ListBoxItem { Content = "Команда не найдена", IsEnabled = false });
+        if (_commandList.Items.Count == 0) _commandList.Items.Add(new ListBoxItem { Content = Loc.L("Команда не найдена"), IsEnabled = false });
         _commandPopup.IsOpen = true;
     }
 

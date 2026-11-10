@@ -25,31 +25,31 @@ public sealed partial class EditorWindow
     {
         _findBox = new TextBox { Width = 220, Height = 26, VerticalContentAlignment = VerticalAlignment.Center };
         _replaceBox = new TextBox { Width = 220, Height = 26, VerticalContentAlignment = VerticalAlignment.Center };
-        AutomationProperties.SetName(_findBox, "Найти");
-        AutomationProperties.SetName(_replaceBox, "Заменить на");
+        AutomationProperties.SetName(_findBox, Loc.L("Найти"));
+        AutomationProperties.SetName(_replaceBox, Loc.L("Заменить на"));
         _findCount = new TextBlock { Margin = new Thickness(10, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center, Foreground = Theme.Muted, MinWidth = 90 };
         AutomationProperties.SetAutomationId(_findCount, "FindCount");
-        _matchCase = new CheckBox { Content = "Учитывать регистр", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(6, 0, 0, 0) };
+        _matchCase = new CheckBox { Content = Loc.L("Учитывать регистр"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(6, 0, 0, 0) };
 
         var row1 = new StackPanel { Orientation = Orientation.Horizontal };
-        row1.Children.Add(new Label { Content = "Найти:", Target = _findBox, Width = 86, VerticalAlignment = VerticalAlignment.Center });
+        row1.Children.Add(new Label { Content = Loc.L("Найти:"), Target = _findBox, Width = 86, VerticalAlignment = VerticalAlignment.Center });
         row1.Children.Add(_findBox);
-        row1.Children.Add(Theme.ToolButton("Предыдущее совпадение", Theme.IconPath(Theme.Icon.Up), "Shift+Enter", (_, _) => FindStep(false)));
-        row1.Children.Add(Theme.ToolButton("Следующее совпадение", Theme.IconPath(Theme.Icon.Down), "Enter", (_, _) => FindStep(true)));
+        row1.Children.Add(Theme.ToolButton(Loc.L("Предыдущее совпадение"), Theme.IconPath(Theme.Icon.Up), "Shift+Enter", (_, _) => FindStep(false)));
+        row1.Children.Add(Theme.ToolButton(Loc.L("Следующее совпадение"), Theme.IconPath(Theme.Icon.Down), "Enter", (_, _) => FindStep(true)));
         row1.Children.Add(_findCount);
         row1.Children.Add(_matchCase);
 
         _replaceRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 4, 0, 0) };
-        _replaceRow.Children.Add(new Label { Content = "Заменить на:", Target = _replaceBox, Width = 86, VerticalAlignment = VerticalAlignment.Center });
+        _replaceRow.Children.Add(new Label { Content = Loc.L("Заменить на:"), Target = _replaceBox, Width = 86, VerticalAlignment = VerticalAlignment.Center });
         _replaceRow.Children.Add(_replaceBox);
-        var replace = new Button { Content = "Заменить", Margin = new Thickness(8, 0, 0, 0), Padding = new Thickness(10, 2, 10, 2) };
-        var replaceAll = new Button { Content = "Заменить все", Margin = new Thickness(6, 0, 0, 0), Padding = new Thickness(10, 2, 10, 2) };
+        var replace = new Button { Content = Loc.L("Заменить"), Margin = new Thickness(8, 0, 0, 0), Padding = new Thickness(10, 2, 10, 2) };
+        var replaceAll = new Button { Content = Loc.L("Заменить все"), Margin = new Thickness(6, 0, 0, 0), Padding = new Thickness(10, 2, 10, 2) };
         replace.Click += (_, _) => ReplaceOne();
         replaceAll.Click += (_, _) => ReplaceAll();
         _replaceRow.Children.Add(replace);
         _replaceRow.Children.Add(replaceAll);
 
-        var close = Theme.ToolButton("Закрыть поиск", Theme.IconPath(Theme.Icon.Close, 14), "Esc", (_, _) => HideFind());
+        var close = Theme.ToolButton(Loc.L("Закрыть поиск"), Theme.IconPath(Theme.Icon.Close, 14), "Esc", (_, _) => HideFind());
         var dock = new DockPanel();
         DockPanel.SetDock(close, Dock.Right);
         close.VerticalAlignment = VerticalAlignment.Top;
@@ -115,7 +115,7 @@ public sealed partial class EditorWindow
         if (hit is null) { _findCount.Text = Strings.NoResults; return; }
         _view.ScrollToCaret();
         int index = _view.Matches.FindIndex(m => m.Start == hit.Value.Start);
-        _findCount.Text = $"{index + 1} из {_view.Matches.Count}";
+        _findCount.Text = Loc.F("{0} из {1}", index + 1, _view.Matches.Count);
     }
 
     private void ReplaceOne()
@@ -133,7 +133,7 @@ public sealed partial class EditorWindow
         if (_findBox.Text.Length == 0) return;
         int n = Ed.ReplaceAll(_findBox.Text, _replaceBox.Text, _matchCase.IsChecked == true);
         RefreshMatches();
-        _findCount.Text = $"Заменено: {n}";
+        _findCount.Text = Loc.F("Заменено: {0}", n);
     }
 
     // ── навигация по заголовкам ──────────────────────────────────────────────

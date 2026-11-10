@@ -363,6 +363,36 @@ Test("CF_HTML: фрагмент извлекается и упаковывает
     Assert(HtmlClipboardSanitizer.ExtractFragment(cf) == "<p>Привет</p>", "фрагмент: " + HtmlClipboardSanitizer.ExtractFragment(cf));
 });
 
+// ── Язык интерфейса (Rilvo Office: английский по умолчанию) ─────────────────
+Test("У каждой русской строки есть английский текст с теми же подстановками", () =>
+{
+    var ph = new System.Text.RegularExpressions.Regex(@"\{\d+[^}]*\}");
+    foreach (var ru in Pero.Core.Text.Loc.Keys)
+    {
+        string en = Pero.Core.Text.Loc.EnglishFor(ru)!;
+        Assert(!string.IsNullOrWhiteSpace(en), $"пустой перевод «{ru}»");
+        Assert(!System.Text.RegularExpressions.Regex.IsMatch(en, "[А-Яа-яЁё]"), $"в переводе кириллица: «{en}»");
+        var a = ph.Matches(ru).Select(m => m.Value).Order();
+        var b = ph.Matches(en).Select(m => m.Value).Order();
+        Assert(a.SequenceEqual(b), $"подстановки различаются: «{ru}» / «{en}»");
+    }
+});
+
+Test("Loc: английский по умолчанию в приложении, русский по выбору", () =>
+{
+    try
+    {
+        Pero.Core.Text.Loc.Use(null);
+        Assert(Pero.Core.Text.Loc.English, "по умолчанию не английский");
+        Assert(Pero.Core.Text.Loc.L("Файл") == "File", Pero.Core.Text.Loc.L("Файл"));
+        Assert(Pero.Core.Text.Loc.F("Заменено: {0}", 3) == "Replaced: 3", "F");
+        Assert(Pero.Core.Text.Loc.L("нет такой строки") == "нет такой строки", "неизвестная строка");
+        Pero.Core.Text.Loc.Use("ru");
+        Assert(Pero.Core.Text.Loc.L("Файл") == "Файл", "ru");
+    }
+    finally { Pero.Core.Text.Loc.Use("ru"); }
+});
+
 // ── запуск ─────────────────────────────────────────────────────────────────
 int failed = 0;
 foreach (var (name, body) in tests)

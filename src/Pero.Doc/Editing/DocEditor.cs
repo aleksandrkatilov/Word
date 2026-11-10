@@ -59,7 +59,7 @@ public sealed partial class DocEditor
     /// <summary>Перейти к правке колонтитула (или основного текста при null).</summary>
     public void EnterStory(HeaderFooter? hf, DocPos? at = null)
     {
-        if (hf is not null && !Doc.HeadersFooters.Contains(hf)) throw new ArgumentException("колонтитул не из этого документа");
+        if (hf is not null && !Doc.HeadersFooters.Contains(hf)) throw new ArgumentException(Loc.L("колонтитул не из этого документа"));
         Story = hf;
         Index = new ParaIndex(StoryBlocks);
         _lastName = null;

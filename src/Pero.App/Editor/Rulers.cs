@@ -58,7 +58,7 @@ public abstract class RulerBase : FrameworkElement
     protected static int Snap(double twips) =>
         Keyboard.Modifiers.HasFlag(ModifierKeys.Alt) ? (int)Math.Round(twips) : (int)(Math.Round(twips / (TwipsPerCm / 4)) * (TwipsPerCm / 4));
 
-    protected static string Cm(double twips) => (twips / TwipsPerCm).ToString("0.##", CultureInfo.CurrentCulture) + " см";
+    protected static string Cm(double twips) => (twips / TwipsPerCm).ToString("0.##", CultureInfo.CurrentCulture) + Loc.L(" см");
 }
 
 public sealed class HorizontalRuler : RulerBase
@@ -180,8 +180,8 @@ public sealed class HorizontalRuler : RulerBase
             Cursor = hit is "ml" or "mr" ? Cursors.SizeWE : hit is not null ? Cursors.Hand : Cursors.Arrow;
             ToolTip = hit switch
             {
-                "ml" => "Левое поле", "mr" => "Правое поле", "if" => "Отступ первой строки",
-                "il" => "Отступ слева", "ir" => "Отступ справа", _ => null,
+                "ml" => Loc.L("Левое поле"), "mr" => Loc.L("Правое поле"), "if" => Loc.L("Отступ первой строки"),
+                "il" => Loc.L("Отступ слева"), "ir" => Loc.L("Отступ справа"), _ => null,
             };
             return;
         }
@@ -306,7 +306,7 @@ public sealed class VerticalRuler : RulerBase
         {
             var hit = HitTest(p);
             Cursor = hit is not null ? Cursors.SizeNS : Cursors.Arrow;
-            ToolTip = hit switch { "mt" => "Верхнее поле", "mb" => "Нижнее поле", _ => null };
+            ToolTip = hit switch { "mt" => Loc.L("Верхнее поле"), "mb" => Loc.L("Нижнее поле"), _ => null };
             return;
         }
         var page = View.Layout.Pages[Page];

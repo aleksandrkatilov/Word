@@ -47,7 +47,7 @@ public sealed class DecompressionBudget(long maxBytes)
         Consumed += n;
         if (Consumed > maxBytes)
             throw new PackageRejectedException(
-                $"Распакованный объём превышает допустимые {maxBytes / (1024 * 1024)} МБ.");
+                Loc.F("Распакованный объём превышает допустимые {0} МБ.", maxBytes / (1024 * 1024)));
     }
 }
 

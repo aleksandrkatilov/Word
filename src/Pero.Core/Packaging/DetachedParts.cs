@@ -97,12 +97,12 @@ public sealed class DetachedParts
         using var src = new ZipArchive(saved, ZipArchiveMode.Read, leaveOpen: true);
         var budget = new DecompressionBudget(PackageLimits.Default.MaxTotalUncompressedBytes);
 
-        var rootRelsDoc = LoadXml(src, "_rels/.rels", budget) ?? throw new InvalidDataException("нет _rels/.rels");
+        var rootRelsDoc = LoadXml(src, "_rels/.rels", budget) ?? throw new InvalidDataException(Loc.L("нет _rels/.rels"));
         string main = rootRelsDoc.Root!.Elements(XName.Get("Relationship", PkgRelNs))
             .First(e => (string?)e.Attribute("Type") == OfficeDocRel).Attribute("Target")!.Value.TrimStart('/');
         string mainRelsPath = RelsPathFor(main);
         var mainRelsDoc = LoadXml(src, mainRelsPath, budget) ?? new XDocument(new XElement(XName.Get("Relationships", PkgRelNs)));
-        var ctDoc = LoadXml(src, "[Content_Types].xml", budget) ?? throw new InvalidDataException("нет [Content_Types].xml");
+        var ctDoc = LoadXml(src, "[Content_Types].xml", budget) ?? throw new InvalidDataException(Loc.L("нет [Content_Types].xml"));
 
         var existing = new HashSet<string>(src.Entries.Select(e => e.FullName), StringComparer.OrdinalIgnoreCase);
         var newParts = new List<Part>();
@@ -118,7 +118,7 @@ public sealed class DetachedParts
             foreach (var g in typeGroups)
             {
                 var clash = g.Parts.FirstOrDefault(p => existing.Contains(p.Name));
-                if (clash is not null) { skipped.Add($"{g.Target} (имя занято: {clash.Name})"); continue; }
+                if (clash is not null) { skipped.Add(Loc.F("{0} (имя занято: {1})", g.Target, clash.Name)); continue; }
 
                 newParts.AddRange(g.Parts);
                 foreach (var p in g.Parts) existing.Add(p.Name);

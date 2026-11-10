@@ -39,7 +39,7 @@ public sealed partial class DocEditor
     public void PasteFragment(Fragment f)
     {
         if (f.Blocks.Count == 0) return;
-        Execute("Вставка", () =>
+        Execute(Loc.L("Вставка"), () =>
         {
             var at = DeleteSelectionCore();
             var paras = f.Blocks.OfType<Paragraph>().Select(p => (Paragraph)p.Clone()).ToList();
@@ -124,7 +124,7 @@ public sealed partial class DocEditor
     {
         var all = FindAll(query, matchCase);
         if (all.Count == 0) return 0;
-        Execute("Заменить все", () =>
+        Execute(Loc.L("Заменить все"), () =>
         {
             for (int k = all.Count - 1; k >= 0; k--)
             {

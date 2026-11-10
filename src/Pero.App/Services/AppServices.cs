@@ -1,5 +1,6 @@
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Pero.Core.Compatibility;
 using Pero.Core.Files;
 using Pero.Core.Packaging;
@@ -61,8 +62,13 @@ public sealed class AppServices : IDisposable
 
 public sealed class AppSettings
 {
-    /// <summary>Язык интерфейса: ru или en.</summary>
-    public string Language { get; set; } = "ru";
+    /// <summary>Язык интерфейса: en (по умолчанию) или ru. Меняется после перезапуска.</summary>
+    // Хранится под новым ключом: прежний "Language" всегда был "ru" (выбора языка не было), его не учитываем.
+    [JsonPropertyName("UiLanguage")]
+    public string Language { get; set; } = "en";
+
+    public static string? NormalizeLanguage(string? code) =>
+        code?.Trim().ToLowerInvariant() switch { "en" => "en", "ru" => "ru", _ => null };
     public int AutoRecoverSeconds { get; set; } = 30;
     public bool ShowHorizontalRuler { get; set; } = true;
     public bool ShowVerticalRuler { get; set; } = true;

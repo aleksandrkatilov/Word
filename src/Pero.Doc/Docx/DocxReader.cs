@@ -19,8 +19,8 @@ public static class DocxReader
     public static Model.Document Read(Stream stream)
     {
         var store = PackageStore.Read(stream);
-        var xml = store.LoadXml(store.MainPart) ?? throw new InvalidDataException("пустая основная часть");
-        var body = xml.Root?.Element(W + "body") ?? throw new InvalidDataException("в документе нет w:body");
+        var xml = store.LoadXml(store.MainPart) ?? throw new InvalidDataException(Loc.L("пустая основная часть"));
+        var body = xml.Root?.Element(W + "body") ?? throw new InvalidDataException(Loc.L("в документе нет w:body"));
 
         var doc = new Model.Document { Package = store };
         doc.Styles = StylesReader.Read(store);

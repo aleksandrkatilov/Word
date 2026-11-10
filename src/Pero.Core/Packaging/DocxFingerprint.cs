@@ -52,7 +52,7 @@ public sealed class DocxFingerprint
         var lim = limits ?? PackageLimits.Default;
         var fp = new DocxFingerprint();
         using var zip = new ZipArchive(stream, ZipArchiveMode.Read, leaveOpen: true);
-        if (zip.Entries.Count > lim.MaxEntries) throw new PackageRejectedException("слишком много частей пакета");
+        if (zip.Entries.Count > lim.MaxEntries) throw new PackageRejectedException(Loc.L("слишком много частей пакета"));
         var budget = new DecompressionBudget(lim.MaxTotalUncompressedBytes);
 
         foreach (var e in zip.Entries)
@@ -65,7 +65,7 @@ public sealed class DocxFingerprint
             if (n.StartsWith("word/footer", StringComparison.OrdinalIgnoreCase) && n.EndsWith(".xml")) { fp.FooterParts++; fp.ScanFields(e, budget); }
         }
 
-        var main = zip.GetEntry("word/document.xml") ?? throw new PackageRejectedException("нет word/document.xml");
+        var main = zip.GetEntry("word/document.xml") ?? throw new PackageRejectedException(Loc.L("нет word/document.xml"));
         fp.ScanMain(main, budget);
         return fp;
     }
@@ -200,37 +200,37 @@ public sealed class DocxFingerprint
             int i = 0;
             while (i < Text.Length && i < after.Text.Length && Text[i] == after.Text[i]) i++;
             string Around(string s) => s.Substring(Math.Max(0, i - 20), Math.Min(60, Math.Max(0, s.Length - Math.Max(0, i - 20)))).Replace('\n', '¶');
-            d.Add(new("Текст", $"…{Around(Text)}… ({Text.Length} симв.)", $"…{Around(after.Text)}… ({after.Text.Length} симв.)", true));
+            d.Add(new(Loc.L("Текст"), Loc.F("…{0}… ({1} симв.)", Around(Text), Text.Length), Loc.F("…{0}… ({1} симв.)", Around(after.Text), after.Text.Length), true));
         }
-        Num("Абзацы", Paragraphs, after.Paragraphs);
-        Num("Таблицы", Tables, after.Tables);
-        Num("Строки таблиц", TableRows, after.TableRows);
-        Num("Ячейки", TableCells, after.TableCells);
-        Num("Объединения ячеек", MergedCells, after.MergedCells);
-        Num("Изображения в строке", InlineImages, after.InlineImages);
-        Num("Плавающие объекты", FloatingObjects, after.FloatingObjects);
-        Num("Гиперссылки", Hyperlinks, after.Hyperlinks);
-        Num("Абзацы списков", NumberedParagraphs, after.NumberedParagraphs);
-        Num("Разрывы страниц", PageBreaks, after.PageBreaks);
-        Num("Разделы", Sections, after.Sections);
-        Num("Части верхних колонтитулов", HeaderParts, after.HeaderParts);
-        Num("Части нижних колонтитулов", FooterParts, after.FooterParts);
-        Num("Поля PAGE/NUMPAGES", PageFields, after.PageFields);
-        Num("Примечания", Comments, after.Comments);
-        Num("Исправления", TrackedChanges, after.TrackedChanges);
-        Num("Сноски", Footnotes, after.Footnotes);
-        Num("Закладки", Bookmarks, after.Bookmarks);
-        Num("Поля оглавления", TocFields, after.TocFields);
-        Num("Медиафайлы", MediaParts, after.MediaParts);
-        Str("Размер страницы", PageSize, after.PageSize);
-        Str("Поля страницы", PageMargins, after.PageMargins);
+        Num(Loc.L("Абзацы"), Paragraphs, after.Paragraphs);
+        Num(Loc.L("Таблицы"), Tables, after.Tables);
+        Num(Loc.L("Строки таблиц"), TableRows, after.TableRows);
+        Num(Loc.L("Ячейки"), TableCells, after.TableCells);
+        Num(Loc.L("Объединения ячеек"), MergedCells, after.MergedCells);
+        Num(Loc.L("Изображения в строке"), InlineImages, after.InlineImages);
+        Num(Loc.L("Плавающие объекты"), FloatingObjects, after.FloatingObjects);
+        Num(Loc.L("Гиперссылки"), Hyperlinks, after.Hyperlinks);
+        Num(Loc.L("Абзацы списков"), NumberedParagraphs, after.NumberedParagraphs);
+        Num(Loc.L("Разрывы страниц"), PageBreaks, after.PageBreaks);
+        Num(Loc.L("Разделы"), Sections, after.Sections);
+        Num(Loc.L("Части верхних колонтитулов"), HeaderParts, after.HeaderParts);
+        Num(Loc.L("Части нижних колонтитулов"), FooterParts, after.FooterParts);
+        Num(Loc.L("Поля PAGE/NUMPAGES"), PageFields, after.PageFields);
+        Num(Loc.L("Примечания"), Comments, after.Comments);
+        Num(Loc.L("Исправления"), TrackedChanges, after.TrackedChanges);
+        Num(Loc.L("Сноски"), Footnotes, after.Footnotes);
+        Num(Loc.L("Закладки"), Bookmarks, after.Bookmarks);
+        Num(Loc.L("Поля оглавления"), TocFields, after.TocFields);
+        Num(Loc.L("Медиафайлы"), MediaParts, after.MediaParts);
+        Str(Loc.L("Размер страницы"), PageSize, after.PageSize);
+        Str(Loc.L("Поля страницы"), PageMargins, after.PageMargins);
 
         var lostStyles = UsedStyles.Except(after.UsedStyles).ToList();
-        if (lostStyles.Count > 0) d.Add(new("Стили", string.Join(", ", lostStyles), "отсутствуют", true));
+        if (lostStyles.Count > 0) d.Add(new(Loc.L("Стили"), string.Join(", ", lostStyles), Loc.L("отсутствуют"), true));
         var lostFonts = Fonts.Except(after.Fonts).ToList();
-        if (lostFonts.Count > 0) d.Add(new("Шрифты", string.Join(", ", lostFonts), "отсутствуют", true));
+        if (lostFonts.Count > 0) d.Add(new(Loc.L("Шрифты"), string.Join(", ", lostFonts), Loc.L("отсутствуют"), true));
         var lostBenign = Parts.Where(IsRegenerablePart).Except(after.Parts, StringComparer.OrdinalIgnoreCase).ToList();
-        if (lostBenign.Count > 0) d.Add(new("Служебные части", string.Join(", ", lostBenign), "пересозданы или не нужны", false));
+        if (lostBenign.Count > 0) d.Add(new(Loc.L("Служебные части"), string.Join(", ", lostBenign), Loc.L("пересозданы или не нужны"), false));
         var lostParts = Parts.Where(p => !p.EndsWith(".rels") && !IsRegenerablePart(p))
                              .Except(after.Parts, StringComparer.OrdinalIgnoreCase)
                              // переименование медиа и колонтитулов допустимо — их количество сравнивается выше
@@ -238,7 +238,7 @@ public sealed class DocxFingerprint
                                          !p.StartsWith("word/header", StringComparison.OrdinalIgnoreCase) &&
                                          !p.StartsWith("word/footer", StringComparison.OrdinalIgnoreCase))
                              .ToList();
-        if (lostParts.Count > 0) d.Add(new("Части пакета", string.Join(", ", lostParts.Take(10)), "отсутствуют", true));
+        if (lostParts.Count > 0) d.Add(new(Loc.L("Части пакета"), string.Join(", ", lostParts.Take(10)), Loc.L("отсутствуют"), true));
         return d;
     }
 }

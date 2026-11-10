@@ -289,7 +289,7 @@ public sealed partial class DocumentView
         else if (Layout.ImageAt(Story, page, x, y) is not null) Cursor = Cursors.Arrow;
         else if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control) && Layout.LinkAt(Story, page, x, y) is not null) Cursor = Cursors.Hand;
         else Cursor = Cursors.IBeam;
-        ToolTip = Layout.LinkAt(Story, page, x, y) is { } l ? $"{l.Url ?? "#" + l.Anchor}\nCtrl+щелчок — открыть ссылку" : null;
+        ToolTip = Layout.LinkAt(Story, page, x, y) is { } l ? Loc.F("{0}\nCtrl+щелчок — открыть ссылку", l.Url ?? "#" + l.Anchor) : null;
     }
 
     protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)

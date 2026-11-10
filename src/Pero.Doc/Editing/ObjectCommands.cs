@@ -16,7 +16,7 @@ public sealed partial class DocEditor
         var state = GetFormatState();
         bool off = state.NumId is int cur && Doc.Numbering.IsBullet(cur) == bullet;
         int numId = off ? 0 : EnsureNumbering(bullet);
-        ApplyPara(bullet ? "Маркированный список" : "Нумерованный список", p =>
+        ApplyPara(bullet ? Loc.L("Маркированный список") : Loc.L("Нумерованный список"), p =>
         {
             if (off) { p.Props.NumId = null; p.Props.Ilvl = null; }
             else { p.Props.NumId = numId; p.Props.Ilvl ??= 0; }
@@ -66,7 +66,7 @@ public sealed partial class DocEditor
         EnsureCharStyle("Hyperlink");
         var link = new LinkRef(url, null);
         var sel = Selection;
-        Execute("Ссылка", () =>
+        Execute(Loc.L("Ссылка"), () =>
         {
             if (sel.IsEmpty)
             {
@@ -92,7 +92,7 @@ public sealed partial class DocEditor
     public void RemoveLink()
     {
         var sel = Selection;
-        Execute("Удалить ссылку", () =>
+        Execute(Loc.L("Удалить ссылку"), () =>
         {
             for (int i = sel.Start.Para; i <= sel.End.Para; i++)
             {
@@ -122,7 +122,7 @@ public sealed partial class DocEditor
     public void InsertImage(byte[] bytes, string extension, int pixelWidth, int pixelHeight)
     {
         string ext = extension.TrimStart('.').ToLowerInvariant() is "jpg" ? "jpeg" : extension.TrimStart('.').ToLowerInvariant();
-        if (ext is not ("png" or "jpeg")) throw new NotSupportedException("Поддерживаются изображения PNG и JPEG.");
+        if (ext is not ("png" or "jpeg")) throw new NotSupportedException(Loc.L("Поддерживаются изображения PNG и JPEG."));
         var store = Doc.Package;
         string dir = store.MainDir.Length == 0 ? "" : store.MainDir + "/";
         int n = 1;
@@ -141,7 +141,7 @@ public sealed partial class DocEditor
         var drawing = XElement.Parse($"""
 <w:drawing xmlns:w="{W}" xmlns:wp="{WP}" xmlns:a="{A}" xmlns:pic="{Pic}" xmlns:r="{R}"><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="{cx}" cy="{cy}"/><wp:effectExtent l="0" t="0" r="0" b="0"/><wp:docPr id="{docPr}" name="Рисунок {docPr}"/><wp:cNvGraphicFramePr><a:graphicFrameLocks noChangeAspect="1"/></wp:cNvGraphicFramePr><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="0" name="pero{n}.{ext}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="{relId}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="{cx}" cy="{cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing>
 """);
-        Execute("Изображение", () =>
+        Execute(Loc.L("Изображение"), () =>
         {
             var at = DeleteSelectionCore();
             var p = P(at.Para);
@@ -167,7 +167,7 @@ public sealed partial class DocEditor
     /// <summary>Пропорционально изменить размер изображения в позиции (новая ширина в EMU).</summary>
     public void ResizeImage(DocPos at, long newCx)
     {
-        Execute("Размер изображения", () =>
+        Execute(Loc.L("Размер изображения"), () =>
         {
             var p = P(at.Para);
             int pos = 0;
@@ -195,7 +195,7 @@ public sealed partial class DocEditor
     {
         rows = Math.Clamp(rows, 1, 100); cols = Math.Clamp(cols, 1, 30);
         EnsureTableStyle();
-        Execute("Таблица", () =>
+        Execute(Loc.L("Таблица"), () =>
         {
             var at = DeleteSelectionCore();
             var loc = Index[at.Para];
@@ -246,7 +246,7 @@ public sealed partial class DocEditor
     public void InsertRow(bool below)
     {
         if (CurrentCell() is not var (t, r, _)) return;
-        Execute(below ? "Вставить строку ниже" : "Вставить строку выше", () =>
+        Execute(below ? Loc.L("Вставить строку ниже") : Loc.L("Вставить строку выше"), () =>
         {
             var src = t.Rows[r];
             var row = new TableRow { RawTrPr = src.RawTrPr is null ? null : new XElement(src.RawTrPr) };
@@ -283,7 +283,7 @@ public sealed partial class DocEditor
     {
         if (CurrentCell() is not var (t, r, _)) return;
         if (t.Rows.Count == 1) { DeleteTable(); return; }
-        Execute("Удалить строку", () =>
+        Execute(Loc.L("Удалить строку"), () =>
         {
             // если удаляется начало вертикального объединения, следующая строка его начинает
             if (r + 1 < t.Rows.Count)
@@ -308,7 +308,7 @@ public sealed partial class DocEditor
     public void InsertColumn(bool right)
     {
         if (CurrentCell() is not var (t, r, ci)) return;
-        Execute(right ? "Вставить столбец справа" : "Вставить столбец слева", () =>
+        Execute(right ? Loc.L("Вставить столбец справа") : Loc.L("Вставить столбец слева"), () =>
         {
             var curRow = t.Rows[r];
             int gc = GridColumnOf(curRow, ci) + (right ? curRow.Cells[ci].GridSpan : 0);
@@ -342,7 +342,7 @@ public sealed partial class DocEditor
     {
         if (CurrentCell() is not var (t, r, ci)) return;
         if (t.Grid.Count <= 1) { DeleteTable(); return; }
-        Execute("Удалить столбец", () =>
+        Execute(Loc.L("Удалить столбец"), () =>
         {
             int gc = GridColumnOf(t.Rows[r], ci);
             foreach (var row in t.Rows)
@@ -370,7 +370,7 @@ public sealed partial class DocEditor
     /// <summary>Ширина колонки сетки (twips); соседняя справа компенсирует, общая ширина сохраняется.</summary>
     public void SetColumnWidth(Table t, int gridCol, int twips)
     {
-        Execute("Ширина столбца", () =>
+        Execute(Loc.L("Ширина столбца"), () =>
         {
             int old = t.Grid[gridCol];
             int w = Math.Max(300, twips);
@@ -390,7 +390,7 @@ public sealed partial class DocEditor
     public void DeleteTable()
     {
         if (CurrentCell() is not var (t, _, _)) return;
-        Execute("Удалить таблицу", () =>
+        Execute(Loc.L("Удалить таблицу"), () =>
         {
             var container = FindContainer(StoryBlocks, t)!;
             int i = container.IndexOf(t);
@@ -416,7 +416,7 @@ public sealed partial class DocEditor
         if (a.Row == b.Row)
         {
             if (a.CellIndex == b.CellIndex) return;
-            Execute("Объединить ячейки", () =>
+            Execute(Loc.L("Объединить ячейки"), () =>
             {
                 var row = t.Rows[a.Row];
                 var first = row.Cells[a.CellIndex];
@@ -435,7 +435,7 @@ public sealed partial class DocEditor
         }
         int colA = GridColumnOf(t.Rows[a.Row], a.CellIndex), colB = GridColumnOf(t.Rows[b.Row], b.CellIndex);
         if (colA != colB) return;
-        Execute("Объединить ячейки", () =>
+        Execute(Loc.L("Объединить ячейки"), () =>
         {
             var top = t.Rows[a.Row].Cells[a.CellIndex];
             top.VMerge = VMerge.Restart;
@@ -458,7 +458,7 @@ public sealed partial class DocEditor
         if (CurrentCell() is not var (t, r, ci)) return;
         var cell = t.Rows[r].Cells[ci];
         if (cell.GridSpan <= 1 && cell.VMerge != VMerge.Restart) return;
-        Execute("Разделить ячейку", () =>
+        Execute(Loc.L("Разделить ячейку"), () =>
         {
             int col = GridColumnOf(t.Rows[r], ci);
             if (cell.VMerge == VMerge.Restart)
@@ -517,7 +517,7 @@ public sealed partial class DocEditor
 
     // ── страница ─────────────────────────────────────────────────────────────
 
-    public void SetPageSize(int widthTwips, int heightTwips) => Execute("Размер страницы", () =>
+    public void SetPageSize(int widthTwips, int heightTwips) => Execute(Loc.L("Размер страницы"), () =>
     {
         bool landscape = Doc.Section.Orientation == Orientation.Landscape;
         var (w, h) = landscape == (widthTwips > heightTwips) ? (widthTwips, heightTwips) : (heightTwips, widthTwips);
@@ -525,7 +525,7 @@ public sealed partial class DocEditor
         return Selection;
     });
 
-    public void SetOrientation(Orientation o) => Execute("Ориентация", () =>
+    public void SetOrientation(Orientation o) => Execute(Loc.L("Ориентация"), () =>
     {
         var s = Doc.Section;
         if (s.Orientation == o) return Selection;
@@ -536,7 +536,7 @@ public sealed partial class DocEditor
         return Selection;
     });
 
-    public void SetMargins(int? top, int? right, int? bottom, int? left) => Execute("Поля", () =>
+    public void SetMargins(int? top, int? right, int? bottom, int? left) => Execute(Loc.L("Поля"), () =>
     {
         var s = Doc.Section;
         if (top is not null) s.MarginTop = Math.Max(0, top.Value);
@@ -555,7 +555,7 @@ public sealed partial class DocEditor
         string type = pageIndex == 0 && Doc.Section.TitlePage ? "first" : "default";
         EnterStory(null);
         HeaderFooter? created = null;
-        Execute(kind == HfKind.Header ? "Верхний колонтитул" : "Нижний колонтитул", () =>
+        Execute(kind == HfKind.Header ? Loc.L("Верхний колонтитул") : Loc.L("Нижний колонтитул"), () =>
         {
             string dir = Doc.Package.MainDir.Length == 0 ? "" : Doc.Package.MainDir + "/";
             string prefix = dir + (kind == HfKind.Header ? "header" : "footer");
@@ -576,13 +576,13 @@ public sealed partial class DocEditor
     public void SetTitlePage(bool on)
     {
         if (Doc.Section.TitlePage == on) return;
-        Execute("Особый колонтитул первой страницы", () => { Doc.Section.TitlePage = on; return Selection; });
+        Execute(Loc.L("Особый колонтитул первой страницы"), () => { Doc.Section.TitlePage = on; return Selection; });
     }
 
     /// <summary>Вставить поле номера страницы (PAGE) или числа страниц (NUMPAGES) в позицию курсора.</summary>
     public void InsertPageField(bool totalPages = false)
     {
-        Execute("Номер страницы", () =>
+        Execute(Loc.L("Номер страницы"), () =>
         {
             var at = DeleteSelectionCore();
             var p = P(at.Para);
