@@ -207,7 +207,7 @@ public sealed partial class EditorWindow
             if (o is not MenuItem mi) continue;
             var c = AllCommands.FirstOrDefault(x => x.Name == (mi.Header as string) || (Loc.L("Масштаб ") + mi.Header) == x.Name || (Loc.L("Стиль: ") + mi.Header) == x.Name);
             if (c?.IsChecked is { } f) { mi.IsCheckable = true; mi.IsChecked = f(); }
-            if (c is not null) mi.IsEnabled = !(c.Edits && ReadOnly) || c.Name is Loc.L("Отменить") or Loc.L("Повторить");
+            if (c is not null) mi.IsEnabled = !(c.Edits && ReadOnly) || (c.Name == Loc.L("Отменить") || c.Name == Loc.L("Повторить"));
             if (mi.Header as string == Loc.L("Таблица")) mi.IsEnabled = Ed.CurrentCell() is not null;
             if (mi.Items.Count > 0) RefreshChecks(mi);
         }
