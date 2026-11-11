@@ -22,6 +22,9 @@ public static class Program
     public static int Main(string[] args)
     {
         Console.OutputEncoding = Encoding.UTF8;
+        // Проверки рассчитаны на русский интерфейс; английский по умолчанию проверяет сценарий 00 в UiRun.
+        Environment.SetEnvironmentVariable("RWRITE_LANG", "ru");
+        Pero.Core.Text.Loc.Use("ru");
         if (args.Length < 3) { Console.WriteLine("pero-lab all <samples> <exe> <out> | core <samples> <out> | deps <dir> <out> | ui <samples> <exe> <out>"); return 64; }
         string cmd = args[0];
         string outDir = args[^1];

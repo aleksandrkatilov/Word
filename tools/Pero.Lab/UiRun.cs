@@ -133,7 +133,7 @@ public sealed class UiRun(string exe, string samples, string outDir, Action<stri
             var first = DocxReader.Read(path).AllParagraphs().First(p => p.Length > 0);
             Check(first.Inlines.OfType<Pero.Doc.Model.Run>().First().Props.Bold == true, "полужирный не сохранён");
             var diffs = DocxFingerprint.FromFile(Path.Combine(samples, "01-styles-lists-multipage.docx")).CompareTo(fp)
-                .Where(d => d.IsLoss && d.Property != "Текст").ToList();
+                .Where(d => d.IsLoss && d.Property != Pero.Core.Text.Loc.L("Текст")).ToList();
             Check(diffs.Count == 0, "потери после правки: " + string.Join("; ", diffs.Select(d => d.Property + ": " + d.Before + " → " + d.After)));
             Check(!Directory.EnumerateFiles(Work, "~$*").Any(), "остался временный файл");
             File.Copy(path, Path.Combine(outDir, "ui-edited-01.docx"), true);
