@@ -1,0 +1,90 @@
+00:12:41 lab all samples/docx artifacts/Pero/RWrite.exe ci-out
+00:12:41 fonts: 240 faces in 29 ms
+00:12:41 core 01-styles-lists-multipage.docx: OK pages=10 open=23 layout=76 save=27 
+00:12:42 core 02-tables.docx: OK pages=3 open=20 layout=16 save=22 
+00:12:42 core 03-images-links.docx: OK pages=3 open=16 layout=0 save=20 
+00:12:42 core 04-unsupported.docx: OK pages=1 open=12 layout=2 save=0 только чтение (неподдерживаемое содержимое); 
+00:12:42 core 05-comments.docx: OK pages=1 open=13 layout=0 save=23 
+00:12:42 core 06-sections.docx: OK pages=1 open=12 layout=0 save=24 
+00:12:42 core 07-floating-image.docx: OK pages=1 open=16 layout=0 save=24 
+00:12:42 core 08-toc-bookmark.docx: OK pages=1 open=13 layout=0 save=0 только чтение (неподдерживаемое содержимое); 
+00:12:43 core corpus\cx01-comments.docx: OK pages=1 open=16 layout=0 save=79 
+00:12:43 core corpus\cx02-tracked-changes.docx: OK pages=1 open=10 layout=0 save=0 только чтение (неподдерживаемое содержимое); 
+00:12:43 core corpus\cx03-footnotes.docx: OK pages=1 open=10 layout=0 save=0 только чтение (неподдерживаемое содержимое); 
+00:12:43 core corpus\cx04-multiple-sections.docx: OK pages=1 open=14 layout=0 save=25 
+00:12:43 core corpus\cx05-textbox.docx: OK pages=1 open=12 layout=0 save=0 только чтение (неподдерживаемое содержимое); 
+00:12:43 core corpus\cx06-equation.docx: OK pages=1 open=16 layout=0 save=0 только чтение (неподдерживаемое содержимое); 
+00:12:43 core corpus\cx07-content-control.docx: OK pages=1 open=11 layout=0 save=0 только чтение (неподдерживаемое содержимое); 
+00:12:43 core corpus\cx08-toc-field.docx: OK pages=1 open=9 layout=0 save=0 только чтение (неподдерживаемое содержимое); 
+00:12:43 core corpus\cx09-chart-part.docx: OK pages=1 open=17 layout=0 save=0 только чтение (неподдерживаемое содержимое); 
+00:12:43 core corpus\cx10-altchunk.docx: OK pages=1 open=10 layout=0 save=0 только чтение (неподдерживаемое содержимое); 
+00:12:43 core corpus\hf01-header-footer-numbers.docx: OK pages=4 open=15 layout=3 save=19 
+00:12:43 core corpus\hf02-different-first-page.docx: OK pages=4 open=15 layout=7 save=16 
+00:12:44 core corpus\hf03-landscape-letter.docx: OK pages=1 open=14 layout=0 save=16 
+00:12:44 core corpus\hf04-margins-page-breaks.docx: OK pages=3 open=9 layout=0 save=17 
+00:12:44 core corpus\im01-png.docx: OK pages=1 open=9 layout=0 save=16 
+00:12:44 core corpus\im02-jpeg.docx: OK pages=1 open=11 layout=0 save=16 
+00:12:44 core corpus\im03-inline-multiple.docx: OK pages=1 open=9 layout=0 save=17 
+00:12:44 core corpus\im04-in-table-and-header.docx: OK pages=1 open=9 layout=0 save=20 
+00:12:44 core corpus\l01-bullets-levels.docx: OK pages=1 open=9 layout=0 save=16 
+00:12:44 core corpus\l02-numbered-levels.docx: OK pages=1 open=9 layout=0 save=16 
+00:12:44 core corpus\l03-mixed-lists.docx: OK pages=1 open=10 layout=0 save=17 
+00:12:45 core corpus\l04-list-in-table.docx: OK pages=1 open=9 layout=0 save=18 
+00:12:45 core corpus\mx01-report.docx: OK pages=2 open=10 layout=1 save=22 
+00:12:45 core corpus\mx02-report.docx: OK pages=3 open=9 layout=2 save=21 
+00:12:45 core corpus\mx03-report.docx: OK pages=2 open=8 layout=1 save=19 
+00:12:45 core corpus\mx04-report.docx: OK pages=2 open=8 layout=1 save=21 
+00:12:45 core corpus\mx05-report.docx: OK pages=2 open=4 layout=1 save=14 
+00:12:46 core corpus\mx06-report.docx: OK pages=3 open=4 layout=1 save=17 
+00:12:46 core corpus\perf-20p-5mb.docx: OK pages=24 open=7 layout=6 save=122 
+00:12:46 core corpus\t01-plain-ru-en.docx: OK pages=2 open=3 layout=0 save=12 
+00:12:46 core corpus\t02-fonts-sizes-colors.docx: OK pages=1 open=3 layout=27 save=10 
+00:12:46 core corpus\t03-headings-styles.docx: OK pages=1 open=3 layout=0 save=29 
+00:12:46 core corpus\t04-justified-multipage.docx: OK pages=9 open=3 layout=4 save=10 
+00:12:46 core corpus\t05-tabs-breaks.docx: OK pages=1 open=3 layout=0 save=13 
+00:12:47 core corpus\t06-character-formatting.docx: OK pages=1 open=3 layout=0 save=10 
+00:12:47 core corpus\tb01-simple-grid.docx: OK pages=1 open=4 layout=0 save=10 
+00:12:47 core corpus\tb02-horizontal-merge.docx: OK pages=1 open=3 layout=0 save=10 
+00:12:47 core corpus\tb03-vertical-merge.docx: OK pages=1 open=4 layout=0 save=12 
+00:12:47 core corpus\tb04-header-repeat-multipage.docx: OK pages=2 open=4 layout=1 save=27 
+00:12:47 core corpus\tb05-nested-table.docx: OK pages=1 open=10 layout=0 save=12 
+00:12:47 core corpus\tb06-widths-shading.docx: OK pages=1 open=3 layout=0 save=9 
+00:12:47 core perf-100p.docx: OK pages=110 open=6 layout=19 save=24 
+00:12:48 core perf-500p.docx: OK pages=501 open=19 layout=123 save=35 
+00:12:48 core: 55 files, failures 0
+00:12:48 core finished in 6703 ms
+00:12:48 deps: 0 problems
+00:12:48 deps finished in 7 ms
+00:12:51 dpi dpi100-1366x768: OK
+00:12:55 dpi dpi150-1366x768-screen2049: OK
+00:12:58 dpi dpi150-910x512-on-1366x768: OK
+00:13:01 dpi dpi200-1366x768-screen2732: OK
+00:13:05 dpi dpi200-1024x640: OK
+00:13:05 dpi finished in 17645 ms
+00:13:05 UI scenario 00-english-by-default
+00:13:09 UI scenario 01-empty-1366x768
+00:13:13 UI scenario 02-narrow-1024x640
+00:13:17 UI scenario open-01-styles-lists-multipage
+00:13:21 UI scenario open-02-tables
+00:13:24 UI scenario open-03-images-links
+00:13:28 UI scenario open-06-sections
+00:13:32 UI scenario readonly-unsupported
+00:13:36 UI scenario reject-90-password-or-doc
+00:13:39 UI scenario reject-91-truncated
+00:13:41 UI scenario reject-92-zip-slip
+00:13:44 UI scenario type-format-save
+00:13:49 UI scenario toolbar-style-align-undo
+00:14:00 UI scenario rulers-margins-indent
+00:14:20 UI scenario table-link-pagenumber
+00:14:30 UI scenario image-insert-pdf
+00:14:41 UI scenario find-replace
+00:14:46 UI scenario command-search
+00:14:50 UI scenario close-with-changes
+00:14:54 UI scenario readonly-file
+00:14:57 UI scenario two-instances
+00:15:01 UI scenario external-change
+00:15:05 UI scenario crash-recovery
+00:15:52 PERF cold start to main window: 718 ms
+00:15:52 UI: 23 из 23 сценариев пройдено
+00:15:52 ui finished in 167000 ms
+00:15:52 DONE failures=0
